@@ -1,0 +1,2761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meeting CRM</title>
+<style>
+:root{
+  color-scheme: light;
+  --navy:#0F2747; --navy2:#172033; --teal:#0F8B8D; --neutral:#F5F7FA;
+  --bg:#EEF4FA; --card:#ffffff; --ink:#172033; --mut:#667085; --line:#D8DEE8;
+  --red:#C2413B; --amb:#B7791F; --blu:#2563EB; --grn:#15803D; --gry:#98A2B3;
+  --redbg:#FCF2F1; --ambbg:#FDF8EC; --blubg:#EFF4FE; --grnbg:#EFF7F1; --grybg:#F1F4F9;
+  --sh:0 1px 2px rgba(15,39,71,.05),0 1px 3px rgba(15,39,71,.04);
+  --shH:0 8px 22px -10px rgba(15,39,71,.22);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);
+  font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:22px 20px 70px}
+a{color:inherit}
+button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
+input,select,textarea{font:inherit;color:inherit}
+
+/* ---------- top bar ---------- */
+.gen{font-size:12px;color:var(--mut)}
+.spacer{flex:1}
+.sub{font-size:13px;color:var(--mut);margin-bottom:18px}
+.ghost{border:1px solid var(--line);background:var(--card);border-radius:8px;
+  padding:5px 11px;font-size:12.5px;color:var(--mut)}
+.ghost:hover{border-color:#c9ced6;color:var(--ink)}
+
+/* ---------- attention strip ---------- */
+.strip{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.stat{background:var(--card);border:1px solid var(--line);border-left:3px solid #C8D3E2;
+  border-radius:10px;padding:11px 15px;min-width:118px;box-shadow:var(--sh)}
+.stat.hot{border-left-color:var(--red)} .stat.warm{border-left-color:var(--amb)}
+.stat.good{border-left-color:var(--grn)}
+.stat b{display:block;font-size:20px;font-weight:650;letter-spacing:-.02em;line-height:1.2}
+.stat span{font-size:11.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.05em}
+.stat.hot b{color:var(--red)} .stat.warm b{color:var(--amb)} .stat.good b{color:var(--grn)}
+
+/* ---------- filters ---------- */
+.bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:999px;
+  padding:5px 13px;font-size:12.5px;font-weight:520;color:var(--mut);transition:.12s}
+.chip:hover{border-color:#BFC9D8;color:var(--ink);background:#fff}
+.chip.on{background:var(--navy);border-color:var(--navy);color:#fff;font-weight:600}
+.search{flex:1;min-width:170px;border:1px solid var(--line);background:var(--card);
+  border-radius:8px;padding:7px 11px;font-size:13px;outline:none}
+.search:focus{border-color:#b6bcc6}
+
+/* ---------- client cards ---------- */
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(330px,1fr))}
+.cc{background:var(--card);border:1px solid var(--line);border-radius:12px;
+  padding:16px 17px 14px;text-align:left;position:relative;overflow:hidden;
+  box-shadow:var(--sh);transition:.14s;display:flex;flex-direction:column;gap:11px;
+  width:100%;cursor:pointer}
+.cc:hover{border-color:#B7C4D6;transform:translateY(-1px);box-shadow:var(--shH)}
+.cc:focus-visible{outline:2px solid var(--blu);outline-offset:2px}
+.cc::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:#C8D3E2}
+.cc.d-over::before,.cc.d-today::before{background:var(--red)}
+.cc.d-soon::before{background:var(--amb)}
+.cc.d-week::before{background:var(--blu)} .cc.d-far::before{background:var(--grn)}
+.cc.d-done{opacity:.72}
+
+.cc-h{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.cc-n{font-size:16.5px;font-weight:650;letter-spacing:-.015em;line-height:1.3}
+.cc-hr{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.dots{width:24px;height:24px;border-radius:6px;color:var(--gry);font-size:15px;
+  line-height:1;display:flex;align-items:center;justify-content:center}
+.dots:hover{background:var(--grybg);color:var(--ink)}
+.pill{font-size:10.5px;font-weight:650;padding:3px 9px;border-radius:999px;
+  white-space:nowrap;letter-spacing:.01em}
+.p-red{background:var(--redbg);color:var(--red)} .p-amb{background:var(--ambbg);color:var(--amb)}
+.p-blu{background:var(--blubg);color:var(--blu)} .p-grn{background:var(--grnbg);color:var(--grn)}
+.p-gry{background:var(--grybg);color:#4b5563}
+
+.cc-a{background:var(--neutral);border:1px solid #E3E9F1;border-radius:9px;padding:10px 12px}
+.lbl{font-size:10.5px;font-weight:650;color:var(--mut);text-transform:uppercase;
+  letter-spacing:.07em;margin-bottom:3px}
+.act{font-size:14px;font-weight:550;line-height:1.35}
+.act.struck{text-decoration:line-through;color:var(--mut);font-weight:500}
+.cc-m{display:flex;gap:16px;font-size:12.5px;color:var(--mut);flex-wrap:wrap}
+.cc-m b{color:var(--ink);font-weight:550}
+.due{font-weight:600}
+.due.over{color:var(--red)} .due.soon{color:var(--amb)}
+.cc-s{font-size:12.5px;color:var(--mut);line-height:1.5;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cc-f{display:flex;justify-content:space-between;align-items:center;gap:8px;
+  border-top:1px solid var(--line);padding-top:9px;font-size:11.5px;color:var(--mut)}
+.stage{font-size:11.5px;font-weight:600;color:#4b5563}
+.snz{font-size:10.5px;color:var(--blu);font-weight:600}
+
+/* ---------- client detail ---------- */
+.back{font-size:13px;color:var(--mut);margin-bottom:14px}
+.back:hover{color:var(--ink)}
+.dh{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;
+  flex-wrap:wrap;margin-bottom:14px}
+.dh h2{font-size:26px;font-weight:680;letter-spacing:-.03em;color:var(--navy)}
+.kpis{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));
+  margin-bottom:12px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;
+  padding:11px 13px;box-shadow:var(--sh)}
+.kpi.wide{grid-column:1/-1}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin-bottom:18px;
+  overflow-x:auto}
+.tab{padding:8px 13px;font-size:13px;color:var(--mut);border-bottom:2px solid transparent;
+  white-space:nowrap;margin-bottom:-1px}
+.tab:hover{color:var(--ink)}
+.tab.on{color:var(--navy);font-weight:640;border-bottom-color:var(--blu)}
+.tab i{font-style:normal;font-size:10.5px;font-weight:650;color:var(--mut);margin-left:6px;
+  background:var(--grybg);border-radius:999px;padding:1px 6px}
+.tab.on i{background:var(--blubg);color:var(--blu)}
+
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;
+  padding:17px 19px;margin-bottom:12px;box-shadow:var(--sh)}
+.panel h3{font-size:12px;font-weight:650;text-transform:uppercase;letter-spacing:.07em;
+  color:var(--mut);margin-bottom:11px}
+ul.b{list-style:none;display:flex;flex-direction:column;gap:7px}
+ul.b li{padding-left:15px;position:relative;font-size:13.5px;line-height:1.5}
+ul.b li::before{content:"";position:absolute;left:2px;top:8px;width:5px;height:5px;
+  border-radius:50%;background:#c3c8d0}
+ul.b.risk li::before{background:var(--red)}
+ul.b.dec li::before{background:var(--grn)}
+.src{font-size:11.5px;color:var(--gry);margin-left:7px}
+
+/* ---------- inline editing ---------- */
+.ed{width:100%;border:1px solid transparent;background:transparent;border-radius:6px;
+  padding:4px 6px;margin:-4px -6px;font-size:14px;font-weight:550;outline:none;
+  transition:.12s;line-height:1.35}
+.ed:hover{border-color:var(--line);background:#fafbfc}
+.ed:focus{border-color:var(--blu);background:#fff;box-shadow:0 0 0 3px rgba(37,99,235,.09)}
+.ed.sm{font-size:13px;font-weight:500}
+textarea.ed{resize:vertical;min-height:52px;font-weight:500;font-size:13.5px;
+  color:var(--mut);line-height:1.55}
+select.ed{appearance:none;cursor:pointer;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M1 1l4 4 4-4' fill='none' stroke='%239ca3af' stroke-width='1.6'/></svg>");
+  background-repeat:no-repeat;background-position:right 6px center;padding-right:22px}
+input[type=date].ed{cursor:pointer}
+.quick{display:flex;gap:4px;flex-wrap:wrap;margin-top:7px}
+.qb{border:1px solid var(--line);background:#fafbfc;border-radius:6px;padding:2px 7px;
+  font-size:11px;color:var(--mut);font-weight:550}
+.qb:hover{border-color:var(--blu);color:var(--blu);background:var(--blubg)}
+.donebtn{border:1px solid var(--line);background:#fafbfc;border-radius:6px;padding:3px 9px;
+  font-size:11.5px;color:var(--mut);font-weight:600;margin-top:8px}
+.donebtn:hover{border-color:var(--grn);color:var(--grn);background:var(--grnbg)}
+.donebtn.on{border-color:var(--grn);color:var(--grn);background:var(--grnbg)}
+
+/* timeline */
+.tl{position:relative;padding-left:22px}
+.tl::before{content:"";position:absolute;left:5px;top:5px;bottom:5px;width:2px;background:var(--line)}
+.tl-i{position:relative;padding-bottom:18px}
+.tl-i:last-child{padding-bottom:0}
+.tl-i::before{content:"";position:absolute;left:-21px;top:5px;width:10px;height:10px;
+  border-radius:50%;background:var(--card);border:2px solid var(--blu)}
+.tl-d{font-size:11.5px;color:var(--mut);font-weight:550}
+.tl-t{font-size:14px;font-weight:580;margin:1px 0 4px}
+.tl-s{font-size:13px;color:var(--mut);line-height:1.5}
+
+/* meeting accordion */
+.mt{border:1px solid var(--line);border-radius:11px;margin-bottom:9px;background:var(--card);
+  overflow:hidden;box-shadow:var(--sh)}
+.mt.open{border-color:#BFCCDD}
+.mt-h{display:flex;align-items:center;gap:12px;padding:13px 15px;width:100%;text-align:left;
+  transition:background .12s}
+.mt-h:hover{background:var(--neutral)}
+.mt.open .mt-h{background:var(--neutral);border-bottom:1px solid var(--line)}
+.mt-dt{font-size:11.5px;color:var(--navy);font-weight:680;min-width:80px;letter-spacing:.01em}
+.mt-nm{flex:1;font-size:13.5px;font-weight:560}
+.mt-b{padding:0 15px 15px;border-top:1px solid var(--line);padding-top:14px;
+  display:flex;flex-direction:column;gap:15px}
+.mt-b h4{font-size:11px;font-weight:650;text-transform:uppercase;letter-spacing:.07em;
+  color:var(--mut);margin-bottom:7px}
+.caret{color:var(--gry);font-size:11px;transition:transform .15s}
+.mt.open .caret{transform:rotate(90deg)}
+.ro-note{font-size:11px;color:var(--gry);font-style:italic}
+
+/* actions table */
+.at{width:100%;border-collapse:collapse;font-size:13px}
+.at th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.07em;
+  color:var(--mut);font-weight:700;padding:0 8px 8px 0;border-bottom:1.5px solid var(--line)}
+.at td{padding:6px 8px 6px 0;border-bottom:1px solid #EDF1F6;vertical-align:middle}
+.at tbody tr{transition:background .12s}
+.at tbody tr:hover{background:#FAFCFE}
+.at tr:last-child td{border-bottom:0}
+.at .cbx{width:26px;padding-right:0}
+.at .ow{color:var(--mut);white-space:nowrap;font-size:12.5px}
+.at tr.isdone{background:#FCFDFC}
+.at tr.isdone .ed,.at tr.isdone .ow{color:var(--mut)}
+.at tr.isdone input.ed[data-f="action"]{text-decoration:line-through}
+.at input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:var(--grn)}
+.at td .ed{min-width:70px}
+.at td.act-c{width:52%}
+
+.empty{color:var(--mut);font-size:13.5px;padding:6px 0;line-height:1.55}
+.hide{display:none!important}
+.foot{margin-top:26px;font-size:11.5px;color:var(--gry);text-align:center}
+
+/* popover + modal + toast */
+.pop{position:fixed;z-index:60;background:var(--card);border:1px solid var(--line);
+  border-radius:11px;box-shadow:0 12px 34px -10px rgba(16,24,40,.28);padding:9px;
+  min-width:236px;max-width:290px;display:flex;flex-direction:column;gap:3px}
+.pop hr{border:0;border-top:1px solid var(--line);margin:5px 0}
+.pop .ph{font-size:10px;font-weight:650;color:var(--mut);text-transform:uppercase;
+  letter-spacing:.07em;padding:4px 7px 2px}
+.mi{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:7px;
+  font-size:13px;text-align:left;width:100%}
+.mi:hover{background:var(--grybg)}
+.mi.dg:hover{background:var(--redbg);color:var(--red)}
+.pop .row{display:flex;gap:4px;flex-wrap:wrap;padding:2px 6px 5px}
+.pop select,.pop input[type=date]{width:100%;border:1px solid var(--line);border-radius:7px;
+  padding:6px 8px;font-size:13px;background:#fff;outline:none;margin:0 0 2px}
+.ovl{position:fixed;inset:0;background:rgba(16,24,40,.34);z-index:70;
+  display:flex;align-items:center;justify-content:center;padding:22px}
+.mdl{background:var(--card);border-radius:14px;padding:21px 22px;max-width:560px;width:100%;
+  box-shadow:0 24px 54px -14px rgba(15,39,71,.42);max-height:calc(100vh - 44px);
+  display:flex;flex-direction:column}
+.mdl h3{font-size:16.5px;font-weight:660;margin-bottom:8px;letter-spacing:-.015em;color:var(--navy)}
+.mdl p{font-size:13px;color:var(--mut);margin-bottom:14px;line-height:1.55}
+.mdl textarea{width:100%;height:190px;border:1px solid var(--line);border-radius:9px;
+  padding:10px;font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;resize:vertical}
+.mdl .btns{display:flex;gap:8px;justify-content:flex-end;margin-top:15px;padding-top:14px;
+  border-top:1px solid var(--line);flex-shrink:0}
+.btn{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:7px 14px;
+  font-size:13px;font-weight:570;box-shadow:var(--sh);transition:.12s}
+.btn:hover{border-color:#BFC9D8;background:#fff}
+.btn.pri{background:var(--navy);border-color:var(--navy);color:#fff}
+.btn.pri:hover{background:#163760;border-color:#163760}
+.btn.dg{border-color:var(--red);color:var(--red)}
+.btn.dg:hover{background:var(--redbg)}
+.toast{position:fixed;bottom:20px;right:20px;z-index:90;background:var(--ink);color:#fff;
+  border-radius:9px;padding:8px 14px;font-size:12.5px;font-weight:550;opacity:0;
+  transform:translateY(6px);transition:.18s;pointer-events:none}
+.toast.on{opacity:1;transform:translateY(0)}
+
+/* ---------- glasses tracker ---------- */
+.btn.add{background:var(--navy);border-color:var(--navy);color:#fff;padding:7px 15px}
+.btn.add:hover{background:#163760;border-color:#163760}
+.gt{width:100%;border-collapse:collapse;font-size:13px}
+.gt th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.07em;
+  color:var(--mut);font-weight:700;padding:0 10px 9px 0;border-bottom:1.5px solid var(--line)}
+.gt td{padding:10px 10px 10px 0;border-bottom:1px solid #EDF1F6;vertical-align:middle}
+.gt tbody tr{transition:background .12s}
+.gt tbody tr:hover{background:#FAFCFE}
+.gt tr:last-child td{border-bottom:0}
+.gt .gt-name{font-weight:600}
+.gt .gt-mut{color:var(--mut);font-size:12.5px}
+.gt select.yn{border:1px solid var(--line);background:#fff;border-radius:7px;padding:4px 7px;
+  font-size:12.5px;outline:none;cursor:pointer;min-width:66px}
+.gt select.yn:focus{border-color:var(--blu)}
+.gt select.yn[data-v="Yes"]{background:var(--grnbg);border-color:#BBE0C6;color:var(--grn);font-weight:650}
+.gt .gt-act{white-space:nowrap;text-align:right}
+.iconbtn{border:1px solid var(--line);background:var(--card);border-radius:7px;padding:4px 9px;
+  font-size:12px;color:var(--mut);font-weight:550;margin-left:5px}
+.iconbtn:hover{border-color:#c9ced6;color:var(--ink)}
+.iconbtn.dg:hover{border-color:var(--red);color:var(--red);background:var(--redbg)}
+.fld{margin-bottom:11px}
+.fld label{display:block;font-size:10.5px;font-weight:650;color:var(--mut);
+  text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px}
+.fld input,.fld select,.fld textarea{width:100%;border:1px solid var(--line);border-radius:8px;
+  padding:8px 10px;font-size:13.5px;background:#fff;outline:none;font-family:inherit}
+.fld textarea{resize:vertical;min-height:64px;line-height:1.5}
+.fld input:focus,.fld select:focus,.fld textarea:focus{border-color:var(--blu);
+  box-shadow:0 0 0 3px rgba(37,99,235,.09)}
+.fld .opt{font-weight:500;text-transform:none;letter-spacing:0;color:var(--gry);margin-left:5px}
+.fld2{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.gt-note{font-size:12px;color:var(--mut);font-weight:400;line-height:1.45;margin-top:3px;
+  max-width:280px}
+.gload{display:flex;align-items:center;gap:10px;color:var(--mut);font-size:13.5px;padding:14px 0}
+.spin{width:15px;height:15px;border:2px solid var(--line);border-top-color:var(--blu);
+  border-radius:50%;animation:sp .7s linear infinite;flex-shrink:0}
+@keyframes sp{to{transform:rotate(360deg)}}
+.gerr{background:var(--redbg);border:1px solid #fecaca;border-radius:10px;padding:13px 15px}
+.gerr p{font-size:13px;color:#991b1b;line-height:1.55;margin-bottom:11px}
+.gerr strong{display:block;font-size:13px;color:#7f1d1d;margin-bottom:4px}
+.gsync{font-size:11.5px;color:var(--gry);display:inline-flex;align-items:center;gap:6px}
+[disabled]{opacity:.5;pointer-events:none}
+.gt.busy{opacity:.55;pointer-events:none}
+@media(max-width:640px){
+  .fld2{grid-template-columns:1fr}
+  .gt,.gt tbody,.gt tr,.gt td{display:block;width:100%}
+  .gt thead{display:none}
+  .gt tr{border:1px solid var(--line);border-radius:11px;background:var(--card);
+    padding:12px 14px;margin-bottom:10px}
+  .gt td{border:0;padding:5px 0;display:flex;justify-content:space-between;
+    align-items:center;gap:12px;text-align:right}
+  .gt td::before{content:attr(data-l);font-size:10.5px;font-weight:650;color:var(--mut);
+    text-transform:uppercase;letter-spacing:.06em;text-align:left;flex-shrink:0}
+  .gt td.gt-name{font-size:15px;padding-bottom:8px;justify-content:flex-start;
+    flex-direction:column;align-items:flex-start;text-align:left}
+  .gt td.gt-name::before{content:""}
+  .gt-note{max-width:100%}
+  .gt .gt-act{text-align:left;padding-top:10px;margin-top:6px;border-top:1px solid var(--line);
+    justify-content:flex-end}
+  .gt .gt-act::before{content:""}
+  .iconbtn{padding:7px 14px;font-size:13px}
+  .gt select.yn{min-width:80px;padding:6px 9px;font-size:13px}
+}
+@media(max-width:600px){
+  .wrap{padding:16px 13px 60px}
+  .at td.act-c{width:auto}
+  .at{font-size:12.5px}
+}
+
+/* ---------- v1.1 header ---------- */
+.hdr{margin:-22px -20px 20px;padding:0 20px;
+  background:linear-gradient(102deg,var(--navy) 0%,#143156 54%,#1C4070 100%)}
+.hdr-in{max-width:1140px;margin:0 auto;display:flex;align-items:center;gap:13px;
+  flex-wrap:wrap;padding:12px 0;min-height:56px}
+.brand{font-size:15px;font-weight:650;letter-spacing:-.01em;color:#fff;
+  display:flex;align-items:center;gap:9px;white-space:nowrap}
+.brand::before{content:"";width:6px;height:19px;border-radius:2px;
+  background:linear-gradient(180deg,#2FA8AA,var(--teal))}
+.seg{display:flex;gap:2px;background:rgba(255,255,255,.10);border-radius:9px;padding:3px;
+  border:1px solid rgba(255,255,255,.13)}
+.seg-b{padding:5px 13px;border-radius:7px;font-size:12.5px;font-weight:560;
+  color:rgba(255,255,255,.74);transition:.14s;white-space:nowrap}
+.seg-b:hover{color:#fff}
+.seg-b.on{background:#fff;color:var(--navy);font-weight:650;
+  box-shadow:0 1px 3px rgba(8,22,42,.28)}
+.hdr .gen{font-size:11.5px;color:rgba(255,255,255,.60)}
+.hdr .ghost{border-color:rgba(255,255,255,.24);background:rgba(255,255,255,.09);
+  color:rgba(255,255,255,.90)}
+.hdr .ghost:hover{background:rgba(255,255,255,.17);border-color:rgba(255,255,255,.4);color:#fff}
+
+/* ---------- v1.1 global search ---------- */
+.gsrch{position:relative;display:flex;align-items:center;margin-bottom:18px;
+  background:var(--card);border:1px solid var(--line);border-radius:11px;
+  box-shadow:var(--sh);transition:.14s}
+.gsrch:focus-within{border-color:var(--blu);box-shadow:0 0 0 3px rgba(37,99,235,.11)}
+.gsrch input{flex:1;min-width:0;border:0;outline:none;background:transparent;
+  padding:11px 10px 11px 39px;font-size:14px;border-radius:11px}
+.gsrch input::placeholder{color:var(--gry)}
+.gsrch input::-webkit-search-cancel-button{display:none}
+.gsrch-i{position:absolute;left:14px;top:50%;width:12px;height:12px;margin-top:-8px;
+  border:1.9px solid var(--gry);border-radius:50%;pointer-events:none}
+.gsrch-i::after{content:"";position:absolute;right:-5px;bottom:-3px;width:6px;height:1.9px;
+  background:var(--gry);border-radius:2px;transform:rotate(45deg)}
+.gsrch-x{margin-right:7px;padding:5px 11px;border-radius:7px;font-size:12px;font-weight:600;
+  color:var(--mut);background:var(--neutral);border:1px solid var(--line);flex-shrink:0}
+.gsrch-x:hover{color:var(--ink);border-color:#BFC9D8}
+
+/* ---------- v1.1 search results ---------- */
+.rmeta{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:13px;
+  color:var(--mut);margin-bottom:15px}
+.rmeta b{color:var(--ink);font-weight:600}
+.rclear{font-size:12.5px;font-weight:600;color:var(--blu)}
+.rclear:hover{text-decoration:underline;text-underline-offset:2px}
+.rgrp{margin-bottom:20px}
+.rgrp-h{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--mut);margin-bottom:9px;display:flex;align-items:center;gap:8px}
+.rgrp-h i{font-style:normal;font-size:10.5px;font-weight:700;background:var(--grybg);
+  color:#475467;border-radius:999px;padding:2px 8px;letter-spacing:.02em}
+.ritem{display:block;width:100%;text-align:left;background:var(--card);
+  border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-bottom:7px;
+  box-shadow:var(--sh);transition:.13s;cursor:pointer}
+.ritem:hover{border-color:#B7C4D6;transform:translateY(-1px);box-shadow:var(--shH)}
+.ritem:focus-visible{outline:2px solid var(--blu);outline-offset:2px}
+.ritem.rdone{opacity:.72}
+.ritem-t{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;
+  flex-wrap:wrap;line-height:1.4}
+.rcli{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
+  color:var(--blu);background:var(--blubg);border-radius:5px;padding:2px 7px}
+.ritem-m{display:flex;gap:15px;flex-wrap:wrap;font-size:12.5px;color:var(--mut);margin-top:6px}
+.ritem-m b{color:var(--ink);font-weight:560}
+.ritem-s{font-size:12.5px;color:var(--mut);line-height:1.5;margin-top:6px}
+.rfld{font-size:10.5px;font-weight:650;text-transform:uppercase;letter-spacing:.05em;
+  color:var(--gry)}
+.ritem mark{background:#FCEFC3;color:var(--ink);border-radius:2px;padding:0 1px;font-weight:600}
+.ychip{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;
+  background:var(--grybg);color:#475467}
+.ychip.on{background:var(--grnbg);color:var(--grn)}
+
+/* ---------- v1.1 empty states ---------- */
+.blank{grid-column:1/-1;background:var(--card);border:1px dashed #C7D2E0;border-radius:12px;
+  padding:30px 24px;text-align:center;display:flex;flex-direction:column;gap:6px}
+.blank b{font-size:14.5px;font-weight:620;color:var(--ink)}
+.blank span{font-size:13px;color:var(--mut);line-height:1.55;max-width:460px;margin:0 auto}
+
+/* ---------- v1.1 glasses metrics on the client page ---------- */
+.gk{display:flex;gap:20px;flex-wrap:wrap;margin-top:4px}
+.gk span{font-size:12.5px;color:var(--mut);display:flex;align-items:baseline;gap:5px}
+.gk b{font-size:17px;font-weight:660;color:var(--ink);letter-spacing:-.02em}
+.gt tr.hl{animation:hlf 2.6s ease-out}
+@keyframes hlf{0%,30%{background:#FDF3D2}100%{background:transparent}}
+
+@media(max-width:600px){
+  .hdr{margin:-16px -13px 16px;padding:0 13px}
+  .hdr-in{padding:10px 0;gap:9px}
+  .brand{font-size:14.5px}
+  .seg{order:3;width:100%}
+  .seg-b{flex:1;text-align:center;padding:6px 8px}
+  .hdr .gen{font-size:11px}
+  .gsrch input{font-size:16px;padding:10px 8px 10px 36px}
+  .ritem-m{gap:10px}
+  .gk{gap:15px}
+}
+
+/* ---------- sheet-backed CRM additions ---------- */
+.ver{position:fixed;right:13px;bottom:7px;z-index:5;font-size:10px;font-weight:600;
+  letter-spacing:.05em;color:var(--gry);opacity:.7;pointer-events:none;user-select:none}
+@media(max-width:600px){.ver{right:9px;bottom:5px;font-size:9.5px}}
+.toast.act{pointer-events:auto}
+.toast button{margin-left:11px;color:#fff;font-weight:650;font-size:12.5px;
+  text-decoration:underline;text-underline-offset:2px}
+.mt-tools{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.at .dl{width:32px;text-align:right;padding-right:0}
+.at .del{color:var(--gry);font-size:16px;line-height:1;padding:1px 6px;border-radius:6px}
+.at .del:hover{background:var(--redbg);color:var(--red)}
+.mdl .scroll{max-height:56vh;overflow:auto;margin:0 -4px;padding:0 4px}
+.mdl h4{font-size:10.5px;font-weight:650;color:var(--mut);text-transform:uppercase;
+  letter-spacing:.07em;margin:17px 0 10px;padding-top:13px;border-top:1px solid var(--line)}
+.mdl .fld textarea.t2{height:74px;min-height:74px}
+.mdl .fld textarea.t3{height:108px;min-height:108px}
+.mdl .fld input[readonly]{background:#fafbfc;color:var(--mut)}
+.pv{background:#fafbfc;border:1px solid var(--line);border-radius:9px;padding:12px 14px;
+  font-size:13px;line-height:1.65;margin-top:12px}
+.imp-log{list-style:none;font-size:13px;display:flex;flex-direction:column;gap:7px;
+  margin:12px 0 0}
+.imp-log li{display:flex;gap:9px;align-items:flex-start;line-height:1.45}
+.imp-log .ok{color:var(--grn);font-weight:700}
+.imp-log .no{color:var(--red);font-weight:700}
+.imp-log .wa{color:var(--gry);font-weight:700}
+.imp-log small{color:var(--mut);display:block;font-size:11.5px}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div class="toast" id="toast"></div>
+<div class="ver">CRM v1.1</div>
+
+<script>
+"use strict";
+/* ---------- constants ---------- */
+const STAGES = ["Discovery","Qualification","Scoping","Proposal","Proposal Sent",
+  "Negotiation","Pilot","Implementation","Closed Won","Closed Lost","On Hold"];
+const STATUSES = ["Needs Attention","Waiting on Client","Waiting on Us","In Progress",
+  "Follow-up Scheduled","On Hold","Completed","No Response"];
+const ASTATUS = ["Open","In Progress","Done","Cancelled"];
+const CLOSED_A = ["Done","Cancelled"];
+/* older sheet rows used a different status vocabulary */
+const A_LEGACY = {"":"Open","open":"Open","not started":"Open","todo":"Open",
+  "to do":"Open","waiting":"In Progress","in progress":"In Progress",
+  "in-progress":"In Progress","started":"In Progress","blocked":"In Progress",
+  "done":"Done","complete":"Done","completed":"Done","closed":"Done",
+  "cancelled":"Cancelled","canceled":"Cancelled","dropped":"Cancelled"};
+
+const NOW = new Date();
+const TODAY = new Date(NOW.getFullYear(), NOW.getMonth(), NOW.getDate());
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c =>
+  ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ============================================================
+   DATES
+   One parser for every value that reaches the app, whether it came
+   from a <input type=date>, a JSON import or a Google Sheets cell.
+   Everything is normalised to a plain "YYYY-MM-DD" string and is
+   never run through a timezone-sensitive conversion twice.
+   ============================================================ */
+const p2 = n => String(n).padStart(2,"0");
+function iso(d){ return d.getFullYear()+"-"+p2(d.getMonth()+1)+"-"+p2(d.getDate()); }
+/* A Date that came out of a serialised sheet cell is midnight in the
+   sheet's own timezone, so it can land on either side of UTC midnight.
+   Rounding to the nearest whole UTC day recovers the calendar day that
+   was actually typed, for both positive and negative offsets. */
+function isoRound(d){
+  const t = new Date(Math.round(d.getTime()/86400000)*86400000);
+  return t.getUTCFullYear()+"-"+p2(t.getUTCMonth()+1)+"-"+p2(t.getUTCDate());
+}
+function dstr(v){
+  if(v === null || v === undefined) return "";
+  if(v instanceof Date) return isNaN(v.getTime()) ? "" : isoRound(v);
+  const s = String(v).trim();
+  if(!s) return "";
+  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);            /* YYYY-MM-DD  */
+  if(m) return m[1]+"-"+p2(m[2])+"-"+p2(m[3]);
+  m = s.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})$/);    /* M/D/YYYY    */
+  if(m) return m[3]+"-"+p2(m[1])+"-"+p2(m[2]);
+  const d = new Date(s);                                        /* ISO w/ time */
+  if(isNaN(d.getTime())) return "";
+  return isoRound(d);
+}
+const nowIso = () => new Date().toISOString();
+function plusDays(n){ const d = new Date(TODAY); d.setDate(d.getDate()+n); return iso(d); }
+function plusMonths(n){ const d = new Date(TODAY); d.setMonth(d.getMonth()+n); return iso(d); }
+function days(v){
+  const d = dstr(v);
+  if(!d) return null;
+  const t = new Date(d + "T00:00:00");                          /* local midnight */
+  if(isNaN(t.getTime())) return null;
+  return Math.round((t - TODAY) / 86400000);
+}
+function fmt(v){
+  const d = dstr(v);
+  if(!d) return "Not set";
+  const t = new Date(d + "T00:00:00");
+  if(isNaN(t.getTime())) return d;
+  return t.toLocaleDateString("en-US",{month:"short",day:"numeric",
+    year: t.getFullYear()===TODAY.getFullYear() ? undefined : "numeric"});
+}
+function rel(n){
+  if(n === null) return "";
+  if(n < 0) return Math.abs(n) + "d overdue";
+  if(n === 0) return "today";
+  if(n === 1) return "tomorrow";
+  if(n <= 30) return "in " + n + "d";
+  return "in " + Math.round(n/30) + "mo";
+}
+function ago(isoTs){
+  if(!isoTs) return "";
+  const t = new Date(isoTs);
+  if(isNaN(t.getTime())) return "";
+  const s = Math.round((Date.now() - t) / 1000);
+  if(s < 60) return "just now";
+  if(s < 3600) return Math.round(s/60) + " min ago";
+  if(s < 86400) return Math.round(s/3600) + "h ago";
+  return Math.round(s/86400) + "d ago";
+}
+
+/* ============================================================
+   IDS - records are related by ID, never by client name.
+   ============================================================ */
+function slug(s){
+  return String(s||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+}
+function rnd(n){ let o = ""; while(o.length < n) o += Math.random().toString(36).slice(2);
+  return o.slice(0,n); }
+function newClientId(name){ return (slug(name) || "client") + "-" + rnd(4); }
+function newMeetingId(clientId, date){
+  return (slug(clientId) || "meeting") + "-" + (dstr(date) || iso(TODAY)) + "-" + rnd(4); }
+function newActionId(scope){
+  return "act-" + (slug(scope).slice(0,26) || "gen") + "-" + rnd(4); }
+
+/* ============================================================
+   TEXT <-> LIST
+   Sheet cells hold plain multi-line text; the UI works with arrays.
+   ============================================================ */
+function toLines(v){
+  if(Array.isArray(v)) return v.map(x => String(x == null ? "" : x).trim()).filter(Boolean);
+  return String(v == null ? "" : v).split(/\r?\n/)
+    .map(s => s.replace(/^\s*[-•*]\s+/,"").trim()).filter(Boolean);
+}
+function toPeople(v){
+  if(Array.isArray(v)) return v.map(x => String(x == null ? "" : x).trim()).filter(Boolean);
+  const s = String(v == null ? "" : v);
+  const parts = /\r?\n/.test(s) ? s.split(/\r?\n/) : s.split(/\s*;\s*/);
+  return parts.map(x => x.replace(/^\s*[-•*]\s+/,"").trim()).filter(Boolean);
+}
+const joinLines = a => (Array.isArray(a) ? a : toLines(a)).join("\n");
+
+/* ------------------------------------------------------------
+   The Meetings sheet has a single free-text Notes column, but the
+   client page still shows Topics / Decisions / Risks / Questions /
+   Transcripts. Those sections are stored inside that one cell using
+   readable "## Label" blocks, and they round-trip on load and save.
+   ------------------------------------------------------------ */
+const M_SECTIONS = [["topics","Topics"],["decisions","Decisions"],["risks","Risks"],
+  ["questions","Questions"],["type","Type"],["transcript","Transcript"]];
+const SEC_BY_LABEL = {};
+M_SECTIONS.forEach(([k,l]) => { SEC_BY_LABEL[l.toLowerCase()] = k; });
+
+function decodeNotes(raw){
+  const out = {notes:[], topics:[], decisions:[], risks:[], questions:[],
+               type:"", transcript:""};
+  let cur = "notes";
+  String(raw == null ? "" : raw).split(/\r?\n/).forEach(line => {
+    const h = line.match(/^\s*#{2,}\s*(.+?)\s*$/);
+    if(h){ cur = SEC_BY_LABEL[h[1].toLowerCase()] || "notes"; return; }
+    const t = line.replace(/^\s*[-•*]\s+/,"").trim();
+    if(!t) return;
+    if(cur === "type" || cur === "transcript"){ if(!out[cur]) out[cur] = t; }
+    else out[cur].push(t);
+  });
+  return out;
+}
+function encodeNotes(m){
+  const parts = [];
+  if(Array.isArray(m.notes) && m.notes.length) parts.push(m.notes.join("\n"));
+  M_SECTIONS.forEach(([k,l]) => {
+    const v = m[k];
+    if(k === "type" || k === "transcript"){
+      if(v && String(v).trim() && !(k === "type" && String(v).trim() === "Meeting"))
+        parts.push("## " + l + "\n" + String(v).trim());
+    } else if(Array.isArray(v) && v.length){
+      parts.push("## " + l + "\n" + v.map(x => "- " + x).join("\n"));
+    }
+  });
+  return parts.join("\n");
+}
+
+/* ============================================================
+   UI PRIMITIVES
+   ============================================================ */
+const app = document.getElementById("app");
+const toastEl = document.getElementById("toast");
+let toastT;
+function toast(msg){
+  clearTimeout(toastT);
+  toastEl.classList.remove("act");
+  toastEl.textContent = msg;
+  toastEl.classList.add("on");
+  toastT = setTimeout(() => toastEl.classList.remove("on"), 1600);
+}
+/* a toast that stays up long enough to click, used for "Could not save. Retry" */
+function toastAction(msg, label, fn){
+  clearTimeout(toastT);
+  toastEl.innerHTML = esc(msg) + ' <button type="button" id="t-act">' + esc(label) + "</button>";
+  toastEl.classList.add("on","act");
+  const b = document.getElementById("t-act");
+  if(b) b.onclick = () => { toastEl.classList.remove("on","act"); fn(); };
+  toastT = setTimeout(() => toastEl.classList.remove("on","act"), 9000);
+}
+
+let popEl = null;
+function closePop(){ if(popEl){ popEl.remove(); popEl = null;
+  document.removeEventListener("mousedown", outside, true);
+  document.removeEventListener("keydown", onEsc, true); } }
+function outside(e){ if(popEl && !popEl.contains(e.target)) closePop(); }
+function onEsc(e){ if(e.key === "Escape") closePop(); }
+function openPop(x, y, html, wire){
+  closePop();
+  popEl = document.createElement("div");
+  popEl.className = "pop";
+  popEl.innerHTML = html;
+  document.body.appendChild(popEl);
+  const r = popEl.getBoundingClientRect();
+  popEl.style.left = Math.max(8, Math.min(x, innerWidth  - r.width  - 8)) + "px";
+  popEl.style.top  = Math.max(8, Math.min(y, innerHeight - r.height - 8)) + "px";
+  if(wire) wire(popEl);
+  setTimeout(() => {
+    document.addEventListener("mousedown", outside, true);
+    document.addEventListener("keydown", onEsc, true);
+  }, 0);
+}
+
+let ovl = null;
+function closeModal(){ if(ovl){ ovl.remove(); ovl = null; } }
+function modal(html, wire){
+  closeModal();
+  ovl = document.createElement("div");
+  ovl.className = "ovl";
+  ovl.innerHTML = '<div class="mdl">' + html + "</div>";
+  ovl.addEventListener("mousedown", e => { if(e.target === ovl) closeModal(); });
+  document.body.appendChild(ovl);
+  if(wire) wire(ovl);
+}
+
+const opt = (list, cur) => list.map(o =>
+  `<option value="${esc(o)}"${o === cur ? " selected" : ""}>${esc(o)}</option>`).join("")
+  + (cur && !list.includes(cur) ? `<option value="${esc(cur)}" selected>${esc(cur)}</option>` : "");
+
+
+/* ============================================================
+   GLASSES TRACKER STORE - backed by a shared Google Sheet via
+   an Apps Script Web App. No localStorage is used here.
+   Nothing in this section can touch the CRM clients, meetings or actions.
+   ============================================================ */
+const GS_URL = "https://script.google.com/macros/s/AKfycbxFuXXCD98VpQJNafLYI0C-cKG1O-lfGAf0UHuREaQQt1OELY_3oHYtcbiOFWy1088n/exec";
+
+let glasses = [];                                        // in-memory mirror of the sheet
+let gState = {loaded:false, loading:false, busy:false, error:null};
+
+/* sheet row  ->  dashboard object */
+function gFromSheet(r){
+  const v = k => (r[k] === null || r[k] === undefined) ? "" : String(r[k]).trim();
+  return {
+    id: v("ID"),
+    name: v("Name"), company: v("Company"), address: v("Address"),
+    phone: v("Phone"), notes: r["Notes"] === undefined ? "" : String(r["Notes"]),
+    delivered: v("Delivered") === "Yes" ? "Yes" : "No",
+    booked: v("Meeting Booked") === "Yes" ? "Yes" : "No",
+    updatedAt: v("Updated At")
+  };
+}
+/* dashboard object  ->  sheet row */
+function gToSheet(g){
+  return {
+    ID: g.id || "",
+    Name: g.name || "", Company: g.company || "", Address: g.address || "",
+    Phone: g.phone || "", Notes: g.notes || "",
+    Delivered: g.delivered === "Yes" ? "Yes" : "No",
+    "Meeting Booked": g.booked === "Yes" ? "Yes" : "No"
+  };
+}
+
+/* ---- transport -------------------------------------------------------- */
+async function gsRead(res){
+  const txt = await res.text();
+  let d;
+  try{ d = JSON.parse(txt); }
+  catch(e){
+    throw new Error(res.ok
+      ? "The Sheet returned something that is not JSON. Check the Apps Script deployment."
+      : "Request failed (" + res.status + ")");
+  }
+  if(d && d.success === false) throw new Error(d.error || d.message || "The Sheet rejected the request.");
+  return d;
+}
+async function gsGet(entity="glasses"){
+  const url = GS_URL + "?entity=" + encodeURIComponent(entity);
+  const res = await fetch(url, {method:"GET", redirect:"follow", cache:"no-store"});
+  const d = await gsRead(res);
+  return Array.isArray(d.records) ? d.records : [];
+}
+async function gsPost(entity, action, record){
+  const res = await fetch(GS_URL, {
+    method: "POST",
+    redirect: "follow",
+    headers: {"Content-Type": "text/plain;charset=utf-8"},
+    body: JSON.stringify({entity: entity, action: action, record: record})
+  });
+  return gsRead(res);
+}
+function gsMessage(e){
+  const m = (e && e.message) || String(e);
+  if(/failed to fetch|networkerror|load failed/i.test(m))
+    return "Could not reach the Google Sheet. Check your connection, or open this file directly in your browser if it is running inside a sandbox.";
+  return m;
+}
+
+/* ---- operations ------------------------------------------------------- */
+async function glassesLoad(){
+  if(gState.loading) return;
+  gState.loading = true; gState.error = null;
+  if(view.module === "glasses") glassesView();
+  try{
+    const rows = await gsGet("glasses");
+    glasses = rows.map(gFromSheet).filter(g => g.id || g.name || g.company);
+    gState.loaded = true; gState.error = null;
+  }catch(e){
+    gState.error = gsMessage(e);
+  }finally{
+    gState.loading = false;
+    if(view.module === "glasses") glassesView();
+  }
+}
+async function glassesSave(action, record, msg){
+  if(gState.busy) return false;                 // blocks duplicate clicks
+  gState.busy = true;
+  if(view.module === "glasses") glassesView();
+  let ok = false;
+  try{
+    await gsPost("glasses", action, record);
+    ok = true;
+    toast(msg);
+  }catch(e){
+    toast("Not saved");
+    gState.error = gsMessage(e);
+  }finally{
+    gState.busy = false;
+  }
+  await glassesLoad();                          // always refresh from the sheet
+  return ok;
+}
+
+/* ============================================================
+   CRM STORE - Clients, Meetings and Actions all live in the
+   same Google Sheet, reached through the transport above.
+   Google Sheets is the only source of truth - no localStorage.
+   Relationships are Client ID and Meeting ID only.
+   ============================================================ */
+let crmClients  = [];
+let crmMeetings = [];
+let crmActions  = [];
+const crm = {loading:false, loaded:false, error:null, syncedAt:null};
+
+const boolish = v => v === true || /^(true|yes|y|1|done|x)$/i.test(String(v == null ? "" : v).trim());
+
+/* ---- clients: sheet row <-> object ---- */
+function cFromSheet(r){
+  const v = k => r[k] == null ? "" : String(r[k]).trim();
+  const name = v("Client Name");
+  return {
+    _id: v("Client ID") || newClientId(name),
+    Client: name, Stage: v("Stage"),
+    "Last Meeting": dstr(r["Last Meeting"]),
+    "Next Follow-up": dstr(r["Next Follow-up"]),
+    "Next Action": v("Next Action"), "Action Owner": v("Action Owner"),
+    Status: v("Status"), Summary: v("Summary"),
+    Meetings: v("Meetings") || "0",
+    Notes: r["Notes"] == null ? "" : String(r["Notes"]),
+    nextActionDone: boolish(r["Next Action Done"]),
+    snoozedUntil: dstr(r["Snoozed Until"]),
+    Updated: v("Updated At")
+  };
+}
+function cToSheet(c){
+  return {
+    "Client ID": c._id, "Client Name": c.Client || "",
+    Stage: c.Stage || "", "Last Meeting": dstr(c["Last Meeting"]),
+    "Next Follow-up": dstr(c["Next Follow-up"]), "Next Action": c["Next Action"] || "",
+    "Action Owner": c["Action Owner"] || "", Status: c.Status || "",
+    Summary: c.Summary || "", Meetings: String(c.Meetings || "0"), Notes: c.Notes || "",
+    "Next Action Done": c.nextActionDone ? "TRUE" : "FALSE",
+    "Snoozed Until": dstr(c.snoozedUntil),
+    "Updated At": c.Updated || nowIso()
+  };
+}
+
+/* ---- meetings: sheet row <-> object ---- */
+function mFromSheet(r){
+  const v = k => r[k] == null ? "" : String(r[k]).trim();
+  const sec = decodeNotes(r["Notes"]);
+  return {
+    _id: v("Meeting ID"), clientId: v("Client ID"),
+    date: dstr(r["Date"]),
+    name: v("Title") || "Untitled meeting",
+    participants: toPeople(r["Participants"]),
+    summary: toLines(r["Summary"]),
+    notes: sec.notes, topics: sec.topics, decisions: sec.decisions,
+    risks: sec.risks, questions: sec.questions,
+    type: sec.type || "Meeting", transcript: sec.transcript,
+    createdAt: v("Created At"), updatedAt: v("Updated At")
+  };
+}
+function mToSheet(m){
+  return {
+    "Meeting ID": m._id, "Client ID": m.clientId || "",
+    Date: dstr(m.date), Title: m.name || "",
+    Participants: joinLines(m.participants), Summary: joinLines(m.summary),
+    Notes: encodeNotes(m),
+    "Created At": m.createdAt || nowIso(),
+    "Updated At": m.updatedAt || nowIso()
+  };
+}
+
+/* ---- actions: sheet row <-> object ---- */
+function normAStatus(s){
+  const raw = String(s == null ? "" : s).trim();
+  if(ASTATUS.includes(raw)) return raw;
+  return A_LEGACY[raw.toLowerCase()] || "Open";
+}
+function aFromSheet(r){
+  const v = k => r[k] == null ? "" : String(r[k]).trim();
+  return {
+    _id: v("Action ID"), meetingId: v("Meeting ID"), clientId: v("Client ID"),
+    action: v("Action Item"), owner: v("Owner") || "Unassigned",
+    due: dstr(r["Due Date"]), status: normAStatus(r["Status"]),
+    updatedAt: v("Updated At")
+  };
+}
+function aToSheet(a){
+  return {
+    "Action ID": a._id, "Meeting ID": a.meetingId || "", "Client ID": a.clientId || "",
+    "Action Item": a.action || "", Owner: a.owner || "", "Due Date": dstr(a.due),
+    Status: normAStatus(a.status), "Updated At": a.updatedAt || nowIso()
+  };
+}
+
+/* ---- initial load: all three entities in parallel ---- */
+async function crmLoad(){
+  if(crm.loading) return;
+  crm.loading = true; crm.error = null;
+  render();
+  try{
+    const [cs, ms, as] = await Promise.all([
+      gsGet("clients"), gsGet("meetings"), gsGet("actions")
+    ]);
+    crmClients  = cs.map(cFromSheet).filter(c => c.Client || c._id);
+    crmMeetings = ms.map(mFromSheet).filter(m => m._id);
+    crmActions  = as.map(aFromSheet).filter(a => a._id);
+    crm.loaded = true; crm.error = null; crm.syncedAt = nowIso();
+  }catch(e){
+    crm.error = gsMessage(e);
+  }finally{
+    crm.loading = false;
+    render();
+  }
+}
+
+/* ---- one saver for every CRM write ---- */
+async function gsSave(entity, action, record, okMsg, onRetry){
+  toast("Saving…");
+  try{
+    await gsPost(entity, action, record);
+    toast((okMsg || "Saved") + " ✓");
+    return true;
+  }catch(e){
+    crm.error = gsMessage(e);
+    toastAction("Could not save.", "Retry",
+      onRetry || (() => gsSave(entity, action, record, okMsg)));
+    return false;
+  }
+}
+
+/* Refresh: pulls Clients, Meetings, Actions and the Glasses Tracker
+   from Google Sheets again, without reloading the page. */
+function refreshAll(){
+  if(!crm.loading) crmLoad();
+  if(!gState.loading) glassesLoad();
+}
+
+/* ---- selectors ---- */
+const clientsAll = () => crmClients.slice();
+const getClient  = id => crmClients.find(c => c._id === id) || null;
+const clientByName = n => crmClients.find(c =>
+  (c.Client || "").trim().toLowerCase() === String(n || "").trim().toLowerCase()) || null;
+
+const meetingsOf = cid => crmMeetings.filter(m => m.clientId === cid)
+  .sort((a,b) => (b.date || "").localeCompare(a.date || ""));
+const getMeeting = id => crmMeetings.find(m => m._id === id) || null;
+
+function actSort(a,b){
+  return (a.due || "9999-99-99").localeCompare(b.due || "9999-99-99") ||
+         (a.action || "").localeCompare(b.action || "");
+}
+const actsOfMeeting = mid => crmActions.filter(a => a.meetingId === mid).sort(actSort);
+const allActs   = cid => crmActions.filter(a => a.clientId === cid).sort(actSort);
+const isOpenA   = a => !CLOSED_A.includes(a.status);
+const openActs  = cid => allActs(cid).filter(isOpenA);
+const doneActs  = cid => allActs(cid).filter(a => !isOpenA(a));
+
+/* ============================================================
+   TEXT MATCHING - shared by global search and company linking.
+   normText collapses whitespace, lowercases and strips accents while
+   keeping the string the same length as flat(), so a match index found
+   in the normalised string still points at the right spot in the text
+   that is actually displayed.
+   ============================================================ */
+const flat = s => String(s == null ? "" : s).replace(/\s+/g, " ").trim();
+const normText = s => flat(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+/* every letter and digit, nothing else - "Lamps Plus" === "LampsPlus" */
+const normKey = s => normText(s).replace(/[^a-z0-9]+/g, "");
+/* words that carry no identity on their own */
+const CO_NOISE = ["inc","llc","ltd","lp","plc","corp","corporation","co","company",
+  "group","holdings","holding","health","the","and","of","intl","international"];
+/* "CVS Health" and "CVS" both reduce to "cvs" */
+function coKey(s){
+  const words = normText(s).replace(/[^a-z0-9 ]+/g, " ").split(/\s+/)
+    .filter(w => w && CO_NOISE.indexOf(w) < 0);
+  return words.join("") || normKey(s);
+}
+
+/* one short excerpt around the match, or the head of the field */
+function snippet(text, needle, len){
+  const t = flat(text);
+  if(!t) return "";
+  len = len || 96;
+  const i = needle ? normText(t).indexOf(needle) : -1;
+  if(i < 0) return t.length > len ? t.slice(0, len - 1).trim() + "…" : t;
+  const a = Math.max(0, i - 30), b = Math.min(t.length, i + needle.length + 58);
+  return (a ? "…" : "") + t.slice(a, b).trim() + (b < t.length ? "…" : "");
+}
+/* escapes first, then wraps the matched run - never emits raw user HTML */
+function hilite(text, needle){
+  const t = flat(text);
+  if(!needle) return esc(t);
+  const n = normText(t);
+  if(n.length !== t.length) return esc(t);      /* alignment guard */
+  const i = n.indexOf(needle);
+  if(i < 0) return esc(t);
+  return esc(t.slice(0, i)) + "<mark>" + esc(t.slice(i, i + needle.length)) +
+         "</mark>" + esc(t.slice(i + needle.length));
+}
+
+/* ============================================================
+   GLASSES <-> CLIENTS
+   Related through the existing Glasses "Company" column only. Exact
+   normalised match first, then the noise-word key, then a single
+   unambiguous containment. A recipient is never linked to more than
+   one client, and anything ambiguous is deliberately left unlinked.
+   No new sheet, no new entity, no copy of the glasses array.
+   ============================================================ */
+function glassesLinkMap(){
+  const map = new Map();                       /* glasses id -> client id */
+  if(!crmClients.length || !glasses.length) return map;
+  const exact = new Map(), core = new Map();
+  const put = (m, k, id) => { if(!k) return;
+    if(!m.has(k)) m.set(k, []); if(m.get(k).indexOf(id) < 0) m.get(k).push(id); };
+  crmClients.forEach(c => { put(exact, normKey(c.Client), c._id); put(core, coKey(c.Client), c._id); });
+
+  glasses.forEach(g => {
+    const co = flat(g.company);
+    if(!co) return;
+    const k = normKey(co);
+    if(!k) return;
+    let hit = exact.get(k);
+    if(!hit || hit.length !== 1) hit = core.get(coKey(co));
+    if(!hit || hit.length !== 1){
+      /* controlled fallback: only when exactly one client name contains
+         this company or vice versa, and both are long enough to be safe */
+      const cands = k.length >= 4 ? crmClients.filter(c => {
+        const n = normKey(c.Client);
+        return n.length >= 4 && (n.indexOf(k) >= 0 || k.indexOf(n) >= 0);
+      }) : [];
+      hit = cands.length === 1 ? [cands[0]._id] : null;
+    }
+    if(hit && hit.length === 1) map.set(g.id, hit[0]);
+  });
+  return map;
+}
+const glassesOf = cid => { const m = glassesLinkMap();
+  return glasses.filter(g => m.get(g.id) === cid)
+    .sort((a,b) => (a.name || "").localeCompare(b.name || "")); };
+function glassesStats(cid){
+  const list = glassesOf(cid);
+  return {list: list, total: list.length,
+    delivered: list.filter(g => g.delivered === "Yes").length,
+    booked:    list.filter(g => g.booked === "Yes").length,
+    pending:   list.filter(g => g.delivered === "Yes" && g.booked !== "Yes")};
+}
+
+/* ============================================================
+   GLOBAL SEARCH - runs only over what is already in memory.
+   No request is made to Google Sheets while typing.
+   ============================================================ */
+function clientFields(c){
+  return [["Client", c.Client], ["Client ID", c._id], ["Stage", c.Stage],
+    ["Status", c.Status], ["Next Action", c["Next Action"]],
+    ["Action Owner", c["Action Owner"]], ["Summary", c.Summary], ["Notes", c.Notes],
+    ["Last Meeting", c["Last Meeting"]], ["Last Meeting", fmt(c["Last Meeting"])],
+    ["Next Follow-up", c["Next Follow-up"]], ["Next Follow-up", fmt(c["Next Follow-up"])]];
+}
+function meetingFields(m, cName){
+  return [["Title", m.name], ["Client", cName], ["Participants", m.participants.join(", ")],
+    ["Summary", m.summary.join(" · ")], ["Notes", m.notes.join(" · ")],
+    ["Topics", m.topics.join(" · ")], ["Decisions", m.decisions.join(" · ")],
+    ["Risks", m.risks.join(" · ")], ["Questions", m.questions.join(" · ")],
+    ["Type", m.type], ["Date", m.date], ["Date", fmt(m.date)],
+    ["Transcript", m.transcript], ["Meeting ID", m._id]];
+}
+function actionFields(a, cName, mName){
+  return [["Action", a.action], ["Owner", a.owner], ["Client", cName],
+    ["Meeting", mName], ["Status", a.status],
+    ["Due", a.due], ["Due", fmt(a.due)], ["Action ID", a._id]];
+}
+function glassesFields(g){
+  return [["Name", g.name], ["Company", g.company], ["Address", g.address],
+    ["Phone", g.phone], ["Notes", g.notes],
+    ["Delivered", g.delivered === "Yes" ? "Delivered" : "Not delivered"],
+    ["Meeting Booked", g.booked === "Yes" ? "Meeting booked" : "Not booked"]];
+}
+
+function runSearch(q){
+  const n = normText(q);
+  const out = {q: flat(q), n: n, clients: [], meetings: [], actions: [], glasses: [], total: 0};
+  if(!n) return out;
+  const firstHit = fields => {
+    for(let i = 0; i < fields.length; i++){
+      const v = fields[i][1];
+      if(v && normText(v).indexOf(n) >= 0) return {label: fields[i][0], val: v};
+    }
+    return null;
+  };
+
+  crmClients.forEach(c => {
+    const h = firstHit(clientFields(c));
+    if(h) out.clients.push({c: c, h: h});
+  });
+  crmMeetings.forEach(m => {
+    const c = getClient(m.clientId);
+    const h = firstHit(meetingFields(m, c ? c.Client : ""));
+    if(h) out.meetings.push({m: m, c: c, h: h});
+  });
+  crmActions.forEach(a => {
+    const c = getClient(a.clientId);
+    const mt = a.meetingId ? getMeeting(a.meetingId) : null;
+    const h = firstHit(actionFields(a, c ? c.Client : "", mt ? mt.name : ""));
+    if(h) out.actions.push({a: a, c: c, m: mt, h: h});
+  });
+  glasses.forEach(g => {
+    const h = firstHit(glassesFields(g));
+    if(h) out.glasses.push({g: g, h: h});
+  });
+
+  out.clients.sort((x,y) => (x.c.Client || "").localeCompare(y.c.Client || ""));
+  out.meetings.sort((x,y) => (y.m.date || "").localeCompare(x.m.date || ""));
+  out.actions.sort((x,y) => actSort(x.a, y.a));
+  out.glasses.sort((x,y) => (x.g.name || "").localeCompare(y.g.name || ""));
+  out.total = out.clients.length + out.meetings.length + out.actions.length + out.glasses.length;
+  return out;
+}
+
+/* ---------- navigation out of a search result ---------- */
+function openClient(id, tab, hl){
+  view = Object.assign({}, view, {module:"crm", page:"client", client:id,
+    tab: tab || "overview", hl: hl || ""});
+  render();
+}
+function scrollToAttr(attr, val){
+  setTimeout(() => {
+    const all = app.querySelectorAll("[" + attr + "]");
+    for(let i = 0; i < all.length; i++){
+      if(all[i].getAttribute(attr) === val){
+        all[i].scrollIntoView({block:"center", behavior:"smooth"});
+        return;
+      }
+    }
+  }, 40);
+}
+function gotoClientResult(id){ openClient(id, "overview"); }
+function gotoMeetingResult(id){
+  const m = getMeeting(id);
+  if(!m) return toast("That meeting is no longer loaded");
+  view.openMeetings[m._id] = true;
+  openClient(m.clientId, "meetings");
+  scrollToAttr("data-m", m._id);
+}
+function gotoActionResult(id){
+  const a = crmActions.find(x => x._id === id);
+  if(!a) return toast("That action is no longer loaded");
+  openClient(a.clientId, isOpenA(a) ? "actions" : "completed");
+  scrollToAttr("data-a", a._id);
+}
+function gotoGlassesResult(id){
+  const g = glasses.find(x => x.id === id);
+  if(!g) return toast("That recipient is no longer loaded");
+  const cid = glassesLinkMap().get(g.id);
+  if(cid && getClient(cid)){
+    openClient(cid, "glasses", g.id);
+    scrollToAttr("data-g", g.id);
+    return;
+  }
+  /* not safely linked to a client - fall back to the standalone tracker */
+  view = Object.assign({}, view, {module:"glasses", gf:"all",
+    gq: flat(g.name) || flat(g.company)});
+  render();
+}
+
+/* ---- client writes ---- */
+function clientSave(c, msg){ return gsSave("clients","update", cToSheet(c), msg || "Saved"); }
+function clientCreate(c, msg){ return gsSave("clients","create", cToSheet(c), msg || "Client created"); }
+function setC(id, patch, msg){
+  const i = crmClients.findIndex(c => c._id === id);
+  if(i < 0){ toast("Client not found"); return; }
+  crmClients[i] = Object.assign({}, crmClients[i], patch);
+  crmClients[i].Updated = nowIso();
+  render();
+  clientSave(crmClients[i], msg || "Saved");
+}
+/* ---- meeting writes ---- */
+async function meetingSave(m, mode, msg){
+  m.updatedAt = nowIso();
+  if(!m.createdAt) m.createdAt = m.updatedAt;
+  const ok = await gsSave("meetings", mode, mToSheet(m), msg || "Meeting saved");
+  if(!ok) return false;
+  const i = crmMeetings.findIndex(x => x._id === m._id);
+  if(i < 0) crmMeetings.push(m); else crmMeetings[i] = m;
+  return true;
+}
+async function meetingRemove(m){
+  const ok = await gsSave("meetings","delete", {"Meeting ID": m._id}, "Meeting deleted");
+  if(!ok) return false;
+  crmMeetings = crmMeetings.filter(x => x._id !== m._id);
+  return true;
+}
+/* keeps Last Meeting / Meetings count / Updated At in step with the sheet */
+async function syncClientMeetingStats(cid, msg){
+  const c = getClient(cid);
+  if(!c) return false;
+  const ms = meetingsOf(cid);
+  c.Meetings = String(ms.length);
+  if(ms.length) c["Last Meeting"] = ms[0].date;
+  c.Updated = nowIso();
+  return clientSave(c, msg || "Client updated");
+}
+
+/* ---- action writes ---- */
+async function actionSave(a, mode, msg){
+  if(!a._id) a._id = newActionId(a.meetingId || a.clientId);
+  a.status = normAStatus(a.status);
+  a.updatedAt = nowIso();
+  const ok = await gsSave("actions", mode, aToSheet(a), msg || "Action saved");
+  if(!ok) return false;
+  const i = crmActions.findIndex(x => x._id === a._id);
+  if(i < 0) crmActions.push(a); else crmActions[i] = a;
+  return true;
+}
+async function actionRemove(a){
+  const ok = await gsSave("actions","delete", {"Action ID": a._id}, "Action deleted");
+  if(!ok) return false;
+  crmActions = crmActions.filter(x => x._id !== a._id);
+  return true;
+}
+function setA(id, patch, msg){
+  const i = crmActions.findIndex(a => a._id === id);
+  if(i < 0){ toast("Action not found"); return; }
+  crmActions[i] = Object.assign({}, crmActions[i], patch);
+  crmActions[i].status = normAStatus(crmActions[i].status);
+  crmActions[i].updatedAt = nowIso();
+  gsSave("actions","update", aToSheet(crmActions[i]), msg || "Saved");
+}
+
+/* ============================================================
+   URGENCY
+   ============================================================ */
+const isClosed = c => /^Closed/.test(c.Stage || "") || c.Status === "Completed";
+
+function urgency(c){
+  if(isClosed(c)) return "done";
+  const n = days(c["Next Follow-up"]);
+  if(n === null) return "none";
+  if(n < 0)  return "over";
+  if(n === 0) return "today";
+  if(n <= 2) return "soon";
+  if(n <= 7) return "week";
+  return "far";
+}
+const RANK = {over:0, today:1, soon:2, week:3, far:4, none:5, done:6};
+
+/* Needs Attention:
+   never when closed or snoozed into the future.
+   always when status is Needs Attention, or the follow-up is overdue.
+   otherwise only if it is due within 2 days and there is still work to do. */
+function attention(c){
+  if(isClosed(c)) return false;
+  const snz = c.snoozedUntil;
+  if(snz && days(snz) > 0 && c.Status !== "Needs Attention") return false;
+  if(c.Status === "Needs Attention") return true;
+  const n = days(c["Next Follow-up"]);
+  if(n !== null && n < 0) return true;
+  const hasWork = openActs(c._id).length > 0 || !c.nextActionDone;
+  return n !== null && n <= 2 && hasWork;
+}
+
+const STATUS_TONE = s => {
+  s = (s || "").toLowerCase();
+  if(/needs attention|lost|stalled|at risk|blocked|no response/.test(s)) return "p-red";
+  if(/waiting on client|pending|on hold|awaiting/.test(s)) return "p-amb";
+  if(/won|signed|live|proposal sent|completed|follow-up scheduled/.test(s)) return "p-grn";
+  if(/in progress|waiting on us|discovery|qualif|scoping|intro/.test(s)) return "p-blu";
+  return "p-gry";
+};
+
+/* ============================================================
+   STATE   (view.client holds a Client ID, never a client name)
+   ============================================================ */
+let view = {module:"crm", page:"home", client:null, tab:"overview",
+            filter:"all", q:"", gq:"", gf:"all", hl:"", openMeetings:{}};
+
+/* Shared top bar - brand, module switcher, sync state and the Data menu. */
+function chrome(){
+  const g = view.module === "glasses";
+  return `<header class="hdr"><div class="hdr-in">
+    <span class="brand">${g ? "Glasses Tracker" : "Meeting CRM"}</span>
+    <nav class="seg" role="tablist" aria-label="Module">
+      <button class="seg-b ${g ? "" : "on"}" data-mod="crm"
+        role="tab" aria-selected="${g ? "false" : "true"}">Meeting CRM</button>
+      <button class="seg-b ${g ? "on" : ""}" data-mod="glasses"
+        role="tab" aria-selected="${g ? "true" : "false"}">Glasses Tracker</button>
+    </nav>
+    <span class="spacer"></span>
+    <span class="gen">${crm.loading ? "Syncing…"
+      : crm.syncedAt ? "Synced " + ago(crm.syncedAt) : "Not synced yet"}</span>
+    <button class="ghost" id="data">Data</button>
+  </div></header>`;
+}
+
+/* ============================================================
+   HOME - toolbar, global search, then either the dashboard or
+   the search results. Only #results is redrawn while typing, so
+   the input keeps focus and cursor position.
+   ============================================================ */
+function home(){
+  const off = crm.loading ? " disabled" : "";
+  app.innerHTML = `
+  ${chrome()}
+  <div class="bar">
+    <button class="btn add" id="newmtg"${off}>+ New Meeting</button>
+    <button class="btn" id="impmtg"${off}>Import Meeting</button>
+    <button class="btn" id="newclient"${off}>+ New Client</button>
+    <button class="btn" id="crmrefresh"${off}>${crm.loading ? "Refreshing…" : "Refresh"}</button>
+  </div>
+  <div class="gsrch">
+    <span class="gsrch-i" aria-hidden="true"></span>
+    <input id="q" type="search" autocomplete="off" spellcheck="false" aria-label="Global search"
+      placeholder="Search clients, meetings, actions, participants and glasses…"
+      value="${esc(view.q)}">
+    <button class="gsrch-x${view.q.trim() ? "" : " hide"}" id="qx">Clear</button>
+  </div>
+  <div id="results"></div>`;
+
+  wireChrome();
+  document.getElementById("newmtg").onclick    = () => meetingForm(null, null);
+  document.getElementById("impmtg").onclick    = () => importMeeting();
+  document.getElementById("newclient").onclick = () => clientForm(null);
+  document.getElementById("crmrefresh").onclick = () => refreshAll();
+  wireSearchInput();
+  renderResults();
+}
+
+let qDeb;
+function wireSearchInput(){
+  const el = document.getElementById("q"), x = document.getElementById("qx");
+  if(!el) return;
+  const sync = () => {
+    view.q = el.value;
+    if(x) x.classList.toggle("hide", !view.q.trim());
+    clearTimeout(qDeb);
+    qDeb = setTimeout(renderResults, 200);          /* debounce, in memory only */
+  };
+  el.oninput = sync;
+  el.onkeydown = e => { if(e.key === "Escape"){ el.value = ""; sync(); } };
+  if(x) x.onclick = () => {
+    el.value = ""; view.q = ""; x.classList.add("hide");
+    clearTimeout(qDeb); renderResults(); el.focus();
+  };
+}
+
+function clearSearch(){
+  view.q = "";
+  const el = document.getElementById("q"), x = document.getElementById("qx");
+  if(el) el.value = "";
+  if(x) x.classList.add("hide");
+  clearTimeout(qDeb);
+  renderResults();
+  if(el) el.focus();
+}
+
+function renderResults(){
+  const box = document.getElementById("results");
+  if(!box) return;
+  if(view.q.trim()){ box.innerHTML = searchView(); wireSearchView(); }
+  else { box.innerHTML = dashboardView(); wireDashboard(); }
+}
+
+/* ---------- the normal dashboard ---------- */
+function dashboardView(){
+  const cs = clientsAll();
+  const nOver = cs.filter(c => urgency(c) === "over").length;
+  const nWeek = cs.filter(c => ["today","soon","week"].includes(urgency(c))).length;
+  const nAtt  = cs.filter(attention).length;
+  let nOpenA = 0, nDoneA = 0;
+  cs.forEach(c => { nOpenA += openActs(c._id).length; nDoneA += doneActs(c._id).length; });
+
+  let list = cs.filter(c => {
+    if(view.filter === "attention") return attention(c);
+    if(view.filter === "week") return ["over","today","soon","week"].includes(urgency(c));
+    if(view.filter === "open") return !isClosed(c);
+    return true;
+  });
+  list.sort((a,b) => RANK[urgency(a)] - RANK[urgency(b)] ||
+    (a["Next Follow-up"] || "9").localeCompare(b["Next Follow-up"] || "9") ||
+    a.Client.localeCompare(b.Client));
+
+  const chip = (k,l) => `<button class="chip ${view.filter===k?"on":""}" data-f="${k}">${l}</button>`;
+  return `
+  <p class="sub">Who needs you, what to do, and when.</p>
+  <div class="strip">
+    <div class="stat ${nAtt?"hot":""}"><b>${nAtt}</b><span>Needs attention</span></div>
+    <div class="stat ${nOver?"hot":""}"><b>${nOver}</b><span>Overdue</span></div>
+    <div class="stat ${nWeek?"warm":""}"><b>${nWeek}</b><span>Due this week</span></div>
+    <div class="stat"><b>${nOpenA}</b><span>Open actions</span></div>
+    <div class="stat ${nDoneA?"good":""}"><b>${nDoneA}</b><span>Completed</span></div>
+  </div>
+  <div class="bar">
+    ${chip("attention","Needs attention")}${chip("week","This week")}
+    ${chip("open","Open")}${chip("all","All clients")}
+  </div>
+  <div class="grid">${list.map(card).join("") || `<div class="blank">
+      <b>${cs.length ? "No clients match this filter." : "No clients yet."}</b>
+      <span>${cs.length ? "Try another quick filter, or search above."
+        : "Use + New Client or Import Meeting to add the first one."}</span></div>`}</div>
+  <p class="foot">Clients, meetings and actions all live in Google Sheets.
+    Every edit is written straight back.</p>`;
+}
+function wireDashboard(){
+  app.querySelectorAll("[data-f]").forEach(b =>
+    b.onclick = () => { view.filter = b.dataset.f; renderResults(); });
+  app.querySelectorAll(".cc").forEach(el => {
+    el.onclick = ev => { if(ev.target.closest(".dots")) return; open(el.dataset.c); };
+    el.onkeydown = ev => { if(ev.key === "Enter" || ev.key === " "){
+      ev.preventDefault(); open(el.dataset.c); } };
+  });
+  app.querySelectorAll(".dots").forEach(b =>
+    b.onclick = ev => { ev.stopPropagation(); cardMenu(b.dataset.c, ev); });
+}
+
+/* ---------- global search results ---------- */
+function searchView(){
+  const r = runSearch(view.q);
+  const n = r.n;
+  const head = `<div class="rmeta"><span>${r.total} result${r.total === 1 ? "" : "s"}
+      for <b>“${esc(r.q)}”</b></span>
+    <button class="rclear" id="rclear">Clear search</button></div>`;
+  if(!r.total) return head + `<div class="blank">
+      <b>No results found for “${esc(r.q)}”.</b>
+      <span>Search covers client details, meeting content, participants,
+        action items and glasses recipients.</span></div>`;
+
+  const grp = (label, n2, body) => n2
+    ? `<section class="rgrp"><h3 class="rgrp-h">${label}<i>${n2}</i></h3>${body}</section>` : "";
+
+  const cli = r.clients.map(x => {
+    const c = x.c, d = days(c["Next Follow-up"]);
+    return `<div class="ritem" data-rc="${esc(c._id)}" tabindex="0" role="button">
+      <div class="ritem-t">${hilite(c.Client, n)}
+        <span class="pill ${STATUS_TONE(c.Status)}">${esc(c.Status || c.Stage)}</span></div>
+      <div class="ritem-m"><span>Stage <b>${esc(c.Stage || "—")}</b></span>
+        <span>Follow-up <b class="${d !== null && d < 0 ? "due over" : ""}">${
+          fmt(c["Next Follow-up"])}</b></span></div>
+      <div class="ritem-s">Next action: ${hilite(c["Next Action"] || "Not set", n)}</div>
+    </div>`;
+  }).join("");
+
+  const mtg = r.meetings.map(x => {
+    const m = x.m;
+    const body = (x.h.label === "Client" || x.h.label === "Title" || x.h.label === "Date")
+      ? (m.summary[0] || "") : snippet(x.h.val, n);
+    return `<div class="ritem" data-rm="${esc(m._id)}" tabindex="0" role="button">
+      <div class="ritem-t"><span class="rcli">${esc(x.c ? x.c.Client : "Unlinked")}</span>
+        ${hilite(m.name, n)}</div>
+      <div class="ritem-m"><span><b>${fmt(m.date)}</b></span>
+        <span class="pill p-gry">${esc(m.type)}</span>
+        ${x.h.label !== "Title" ? `<span class="rfld">${esc(x.h.label)}</span>` : ""}</div>
+      ${body ? `<div class="ritem-s">${hilite(body, n)}</div>` : ""}
+    </div>`;
+  }).join("");
+
+  const act = r.actions.map(x => {
+    const a = x.a, d = days(a.due);
+    return `<div class="ritem${isOpenA(a) ? "" : " rdone"}" data-ra="${esc(a._id)}"
+        tabindex="0" role="button">
+      <div class="ritem-t"><span class="rcli">${esc(x.c ? x.c.Client : "Unlinked")}</span>
+        ${hilite(a.action, n)}</div>
+      <div class="ritem-m"><span>Owner <b>${hilite(a.owner, n)}</b></span>
+        <span>Due <b class="${d !== null && d < 0 && isOpenA(a) ? "due over" : ""}">${
+          fmt(a.due)}</b></span>
+        <span class="pill ${STATUS_TONE(a.status)}">${esc(a.status)}</span></div>
+      ${x.m ? `<div class="ritem-s">From: ${hilite(x.m.name, n)}</div>` : ""}
+    </div>`;
+  }).join("");
+
+  const gl = r.glasses.map(x => {
+    const g = x.g;
+    return `<div class="ritem" data-rg="${esc(g.id)}" tabindex="0" role="button">
+      <div class="ritem-t">${hilite(g.name || "Unnamed", n)}
+        ${g.company ? `<span class="rcli">${hilite(g.company, n)}</span>` : ""}</div>
+      <div class="ritem-m">
+        <span class="ychip${g.delivered === "Yes" ? " on" : ""}">${
+          g.delivered === "Yes" ? "Delivered" : "Not delivered"}</span>
+        <span class="ychip${g.booked === "Yes" ? " on" : ""}">${
+          g.booked === "Yes" ? "Meeting booked" : "Not booked"}</span>
+        ${g.phone ? `<span>${hilite(g.phone, n)}</span>` : ""}</div>
+      ${(g.notes || "").trim() ? `<div class="ritem-s">${hilite(snippet(g.notes, n), n)}</div>` : ""}
+    </div>`;
+  }).join("");
+
+  return head + grp("Clients", r.clients.length, cli) +
+    grp("Meetings", r.meetings.length, mtg) +
+    grp("Actions", r.actions.length, act) +
+    grp("Glasses", r.glasses.length, gl);
+}
+
+function wireSearchView(){
+  const rc = document.getElementById("rclear");
+  if(rc) rc.onclick = clearSearch;
+  const go = (sel, fn) => app.querySelectorAll(sel).forEach(el => {
+    const id = el.getAttribute(sel.slice(1, -1));
+    el.onclick = () => fn(id);
+    el.onkeydown = ev => { if(ev.key === "Enter" || ev.key === " "){
+      ev.preventDefault(); fn(id); } };
+  });
+  go("[data-rc]", gotoClientResult);
+  go("[data-rm]", gotoMeetingResult);
+  go("[data-ra]", gotoActionResult);
+  go("[data-rg]", gotoGlassesResult);
+}
+function wireChrome(){
+  app.querySelectorAll("[data-mod]").forEach(b => b.onclick = () => {
+    if(view.module === b.dataset.mod) return;
+    view.module = b.dataset.mod;
+    render();
+  });
+  const d = document.getElementById("data");
+  if(d) d.onclick = e => dataMenu(e);
+}
+
+function render(){
+  closePop();
+  if(view.module === "glasses") return glassesView();
+  if(crm.loading && !crm.loaded){
+    app.innerHTML = chrome() +
+      `<div class="gload" style="justify-content:center;padding:52px 0">
+         <span class="spin"></span>Loading CRM…</div>`;
+    wireChrome();
+    return;
+  }
+  if(crm.error && !crm.loaded){
+    app.innerHTML = chrome() + `<div class="gerr" style="margin-top:18px">
+      <strong>Could not load CRM.</strong>
+      <p>${esc(crm.error)}</p>
+      <button class="btn" id="crm-retry">Retry</button></div>`;
+    wireChrome();
+    document.getElementById("crm-retry").onclick = () => { crm.error = null; crmLoad(); };
+    return;
+  }
+  view.page === "home" ? home() : clientPage();
+}
+
+/* ============================================================
+   HOME
+   ============================================================ */
+
+function open(id){ view = {...view, page:"client", client:id, tab:"overview"}; render(); }
+
+function card(c){
+  const u = urgency(c), n = days(c["Next Follow-up"]);
+  const dcls = (u === "over" || u === "today") ? "over" : u === "soon" ? "soon" : "";
+  const nOpen = openActs(c._id).length, nDone = doneActs(c._id).length;
+  const nMtg = meetingsOf(c._id).length;
+  const snoozed = c.snoozedUntil && days(c.snoozedUntil) > 0;
+  return `<div class="cc d-${u}" data-c="${esc(c._id)}" tabindex="0" role="button">
+    <div class="cc-h">
+      <span class="cc-n">${esc(c.Client)}</span>
+      <span class="cc-hr">
+        <span class="pill ${STATUS_TONE(c.Status)}">${esc(c.Status || c.Stage)}</span>
+        <button class="dots" data-c="${esc(c._id)}" title="Quick actions">&#8942;</button>
+      </span>
+    </div>
+    <div class="cc-a">
+      <div class="lbl">Next action${c["Action Owner"] ? " · " + esc(c["Action Owner"]) : ""}
+        ${c.nextActionDone ? " · done" : ""}</div>
+      <div class="act ${c.nextActionDone ? "struck" : ""}">${esc(c["Next Action"] || "Not set")}</div>
+    </div>
+    <div class="cc-m">
+      <span>Follow-up <b class="due ${dcls}">${fmt(c["Next Follow-up"])}</b>
+        ${n !== null && !isClosed(c) ? `<span class="due ${dcls}">· ${rel(n)}</span>` : ""}</span>
+      <span>Last met <b>${fmt(c["Last Meeting"])}</b></span>
+    </div>
+    <div class="cc-s">${esc(c.Summary)}</div>
+    <div class="cc-f">
+      <span class="stage">${esc(c.Stage)}${snoozed ?
+        ` <span class="snz">· snoozed to ${fmt(c.snoozedUntil)}</span>` : ""}</span>
+      <span>${nMtg} mtg · ${nOpen} open${nDone ? ` · ${nDone} done` : ""}</span>
+    </div>
+  </div>`;
+}
+
+/* ---------- card quick-action menu ---------- */
+function cardMenu(id, ev){
+  const c = getClient(id);
+  if(!c) return;
+  const html = `
+    <button class="mi" data-a="done">${c.nextActionDone ? "&#8634; Reopen next action"
+      : "&#10003; Mark next action done"}</button>
+    <button class="mi" data-a="mtg">&#43; Log a meeting</button>
+    <button class="mi" data-a="open">&#8599; Open client</button>
+    <hr>
+    <div class="ph">Follow-up</div>
+    <div class="row">
+      <button class="qb" data-d="1">Tomorrow</button>
+      <button class="qb" data-d="7">1 week</button>
+      <button class="qb" data-d="14">2 weeks</button>
+      <button class="qb" data-m="1">1 month</button>
+    </div>
+    <input type="date" data-r="fu" value="${esc(c["Next Follow-up"] || "")}">
+    <hr>
+    <div class="ph">Snooze</div>
+    <div class="row">
+      <button class="qb" data-s="1">1 day</button>
+      <button class="qb" data-s="7">1 week</button>
+      <button class="qb" data-s="14">2 weeks</button>
+      <button class="qb" data-sm="1">1 month</button>
+    </div>
+    <input type="date" data-r="snz" value="">
+    <hr>
+    <div class="ph">Status</div>
+    <select data-r="st">${opt(STATUSES, c.Status)}</select>`;
+
+  openPop(ev.clientX, ev.clientY + 6, html, p => {
+    const fu = d => { setC(id, {"Next Follow-up": d, snoozedUntil: ""}, "Follow-up set"); closePop(); };
+    const sn = d => { const patch = {"Next Follow-up": d, snoozedUntil: d};
+      if(c.Status === "Needs Attention") patch.Status = "Follow-up Scheduled";
+      setC(id, patch, "Snoozed to " + fmt(d)); closePop(); };
+
+    p.querySelectorAll("[data-d]").forEach(b => b.onclick = () => fu(plusDays(+b.dataset.d)));
+    p.querySelectorAll("[data-m]").forEach(b => b.onclick = () => fu(plusMonths(+b.dataset.m)));
+    p.querySelectorAll("[data-s]").forEach(b => b.onclick = () => sn(plusDays(+b.dataset.s)));
+    p.querySelectorAll("[data-sm]").forEach(b => b.onclick = () => sn(plusMonths(+b.dataset.sm)));
+    p.querySelector('[data-r="fu"]').onchange = e => e.target.value && fu(e.target.value);
+    p.querySelector('[data-r="snz"]').onchange = e => e.target.value && sn(e.target.value);
+    p.querySelector('[data-r="st"]').onchange = e => {
+      setC(id, {Status: e.target.value}, "Status updated"); closePop(); };
+    p.querySelector('[data-a="done"]').onclick = () => {
+      setC(id, {nextActionDone: !c.nextActionDone},
+        c.nextActionDone ? "Next action reopened" : "Next action done");
+      closePop(); };
+    p.querySelector('[data-a="mtg"]').onclick  = () => { closePop(); meetingForm(null, id); };
+    p.querySelector('[data-a="open"]').onclick = () => { closePop(); open(id); };
+  });
+}
+
+/* ============================================================
+   CLIENT PAGE - GLASSES
+   The same objects from the shared `glasses` array, saved through
+   the standalone tracker's own flow. Nothing is copied or cached.
+   ============================================================ */
+function glassesKpi(st){
+  return `<div class="gk"><span><b>${st.total}</b>recipient${st.total === 1 ? "" : "s"}</span>
+    <span><b>${st.delivered}</b>delivered</span>
+    <span><b>${st.booked}</b>booked</span></div>`;
+}
+
+function clientGlassesPanel(st){
+  if(!st.total) return "";
+  return `<div class="panel"><h3>Glasses outreach</h3>
+    ${glassesKpi(st)}
+    ${st.pending.length ? `<p class="src" style="display:block;margin-top:11px">
+      Delivered, no meeting yet</p>
+      <ul class="b">${st.pending.map(g =>
+        `<li>${esc(g.name || g.company || "Unnamed")}</li>`).join("")}</ul>`
+    : `<p class="src" style="display:block;margin-top:10px">${
+        st.total === st.booked ? "Every recipient has a meeting booked."
+        : "Nothing delivered is waiting on a meeting."}</p>`}</div>`;
+}
+
+function clientGlassesTab(c, st){
+  const off = (gState.loading || gState.busy) ? " disabled" : "";
+  if(!st.total) return `<div class="panel">
+    <h3>Glasses recipients</h3>
+    <div class="blank"><b>No recipients linked to this client.</b>
+      <span>A Glasses Tracker record links here automatically when its
+        <b>Company</b> matches ${esc(c.Client)}. Ambiguous companies stay unlinked
+        on purpose.</span></div></div>`;
+  return `<div class="panel">
+    <h3>Glasses recipients <span class="ro-note">shared with the Glasses Tracker</span></h3>
+    ${glassesKpi(st)}
+    <table class="gt${gState.busy ? " busy" : ""}" style="margin-top:13px"><thead><tr>
+      <th>Name</th><th>Company</th><th>Address</th><th>Phone</th>
+      <th>Delivered</th><th>Meeting booked</th><th></th></tr></thead><tbody>
+    ${st.list.map(g => `<tr data-g="${esc(g.id)}"${view.hl === g.id ? ' class="hl"' : ""}>
+      <td class="gt-name" data-l="Name">${esc(g.name) || "<span class='gt-mut'>Unnamed</span>"}
+        ${(g.notes || "").trim() ? `<div class="gt-note">${esc(g.notes)}</div>` : ""}</td>
+      <td data-l="Company">${esc(g.company) || "<span class='gt-mut'>—</span>"}</td>
+      <td class="gt-mut" data-l="Address">${esc(g.address) || "—"}</td>
+      <td class="gt-mut" data-l="Phone">${esc(g.phone) || "—"}</td>
+      <td data-l="Delivered"><select class="yn" data-f="delivered" data-v="${esc(g.delivered)}"${off}>
+        <option value="No"${g.delivered==="No"?" selected":""}>No</option>
+        <option value="Yes"${g.delivered==="Yes"?" selected":""}>Yes</option></select></td>
+      <td data-l="Meeting booked"><select class="yn" data-f="booked" data-v="${esc(g.booked)}"${off}>
+        <option value="No"${g.booked==="No"?" selected":""}>No</option>
+        <option value="Yes"${g.booked==="Yes"?" selected":""}>Yes</option></select></td>
+      <td class="gt-act" data-l=""><button class="iconbtn" data-gedit="${esc(g.id)}"${off}>Edit</button></td>
+    </tr>`).join("")}</tbody></table>
+    <p class="src" style="display:block;margin-top:12px">Linked by Company.
+      Edits here are written to the same Google Sheet as the Glasses Tracker.</p></div>`;
+}
+
+function wireClientGlasses(){
+  app.querySelectorAll("tr[data-g] select[data-f]").forEach(sel => {
+    sel.onchange = async () => {
+      const id = sel.closest("tr").dataset.g;
+      const g = glasses.find(x => x.id === id);
+      if(!g || gState.busy){ render(); return; }
+      const patch = Object.assign({}, g);
+      patch[sel.dataset.f] = sel.value;
+      await glassesSave("update", gToSheet(patch),
+        sel.value === "Yes" ? "Marked Yes" : "Marked No");
+      render();
+    };
+  });
+  app.querySelectorAll("[data-gedit]").forEach(b => b.onclick = () => {
+    const g = glasses.find(x => x.id === b.dataset.gedit);
+    if(g) editGlassesFromClient(g);
+  });
+}
+
+/* Opens the tracker's own edit modal, then refreshes the client page
+   once it closes so the row reflects whatever was saved. */
+function editGlassesFromClient(rec){
+  glassesForm(rec);
+  const t = setInterval(() => {
+    if(ovl) return;
+    clearInterval(t);
+    if(view.module === "crm" && view.page === "client") render();
+  }, 150);
+}
+
+/* ============================================================
+   CLIENT PAGE
+   ============================================================ */
+function clientPage(){
+  const c = getClient(view.client);
+  if(!c){ view.page = "home"; return render(); }
+  const ms = meetingsOf(c._id);
+  const oActs = openActs(c._id), dActs = doneActs(c._id);
+  const risks = ms.flatMap(m => m.risks.map(r => ({t:r, d:m.date})));
+  const decs  = ms.flatMap(m => m.decisions.map(r => ({t:r, d:m.date})));
+  const qs    = ms.flatMap(m => m.questions.map(r => ({t:r, d:m.date})));
+  const trs   = ms.filter(m => m.transcript);
+  const gst   = glassesStats(c._id);
+  const n = days(c["Next Follow-up"]);
+
+  const TABS = [["overview","Overview",""],["timeline","Timeline",ms.length],
+    ["meetings","Meetings",ms.length],["actions","Outstanding",oActs.length],
+    ["completed","Completed",dActs.length],["risks","Risks",risks.length],
+    ["decisions","Decisions",decs.length],["transcripts","Transcripts",trs.length],
+    ["glasses","Glasses",gst.total]];
+
+  app.innerHTML = `
+  ${chrome()}
+  <button class="back" id="bk">&larr; All clients</button>
+  <div class="dh"><h2>${esc(c.Client)}</h2>
+    <span class="pill ${STATUS_TONE(c.Status)}">${esc(c.Status || c.Stage)}</span></div>
+
+  <div class="bar">
+    <button class="btn add" id="cp-mtg">+ Log a meeting</button>
+    <button class="btn" id="cp-act">+ Add action</button>
+    <button class="btn" id="cp-imp">Import Meeting</button>
+    <button class="btn" id="cp-edit">Edit client</button>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="lbl">Stage</div>
+      <select class="ed" data-c="Stage">${opt(STAGES, c.Stage)}</select></div>
+    <div class="kpi"><div class="lbl">Status</div>
+      <select class="ed" data-c="Status">${opt(STATUSES, c.Status)}</select></div>
+    <div class="kpi"><div class="lbl">Action owner</div>
+      <input class="ed" data-c="Action Owner" value="${esc(c["Action Owner"] || "")}"
+        placeholder="Us / Client / Both"></div>
+    <div class="kpi"><div class="lbl">Last meeting</div>
+      <input type="date" class="ed" data-c="Last Meeting" value="${esc(dstr(c["Last Meeting"]))}"></div>
+
+    <div class="kpi wide"><div class="lbl">Next follow-up
+      ${n !== null && !isClosed(c) ? `<span class="src ${n<0?"due over":""}">${rel(n)}</span>` : ""}
+      ${c.snoozedUntil && days(c.snoozedUntil) > 0 ?
+        `<span class="snz">snoozed</span>` : ""}</div>
+      <input type="date" class="ed" data-c="Next Follow-up" value="${esc(dstr(c["Next Follow-up"]))}">
+      <div class="quick">
+        <button class="qb" data-d="1">Tomorrow</button>
+        <button class="qb" data-d="7">In 1 week</button>
+        <button class="qb" data-d="14">In 2 weeks</button>
+        <button class="qb" data-m="1">In 1 month</button>
+        <span style="width:8px"></span>
+        <button class="qb" data-s="1">Snooze 1d</button>
+        <button class="qb" data-s="7">1w</button>
+        <button class="qb" data-s="14">2w</button>
+        <button class="qb" data-sm="1">1mo</button>
+      </div></div>
+
+    <div class="kpi wide"><div class="lbl">Next action</div>
+      <input class="ed" data-c="Next Action" value="${esc(c["Next Action"] || "")}"
+        placeholder="One imperative action">
+      <button class="donebtn ${c.nextActionDone ? "on" : ""}" id="nad">
+        ${c.nextActionDone ? "&#10003; Done - click to reopen" : "Mark done"}</button></div>
+
+    <div class="kpi wide"><div class="lbl">Client summary</div>
+      <textarea class="ed" data-c="Summary"
+        placeholder="Where the opportunity stands right now">${esc(c.Summary || "")}</textarea></div>
+
+    <div class="kpi wide"><div class="lbl">Quick notes</div>
+      <textarea class="ed" data-c="Notes"
+        placeholder="Scratchpad - reminders, context, anything">${esc(c.Notes || "")}</textarea></div>
+
+    ${gst.total ? `<div class="kpi wide"><div class="lbl">Glasses outreach</div>
+      ${glassesKpi(gst)}</div>` : ""}
+  </div>
+
+  <div class="tabs">${TABS.map(([k,l,ct]) =>
+    `<button class="tab ${view.tab===k?"on":""}" data-t="${k}">${l}${ct!==""?`<i>${ct}</i>`:""}</button>`
+  ).join("")}</div>
+  <div id="body"></div>`;
+
+  wireChrome();
+  document.getElementById("bk").onclick = () => { view.page = "home"; render(); };
+  document.getElementById("cp-mtg").onclick  = () => meetingForm(null, c._id);
+  document.getElementById("cp-act").onclick  = () => actionForm(null, {clientId:c._id, meetingId:""});
+  document.getElementById("cp-imp").onclick  = () => importMeeting(c);
+  document.getElementById("cp-edit").onclick = () => clientForm(c);
+  app.querySelectorAll("[data-t]").forEach(b =>
+    b.onclick = () => { view.tab = b.dataset.t; render(); });
+
+  wireClientFields(c);
+  renderTab(c, {ms, oActs, dActs, risks, decs, qs, trs, gst});
+  if(!view.hl) window.scrollTo(0,0);
+  view.hl = "";
+}
+
+/* ---------- autosaving field wiring ---------- */
+let deb;
+function wireClientFields(c){
+  const id = c._id;
+
+  app.querySelectorAll("[data-c]").forEach(el => {
+    const f = el.dataset.c;
+    if(el.tagName === "SELECT" || el.type === "date"){
+      el.onchange = () => {
+        const patch = {}; patch[f] = el.type === "date" ? dstr(el.value) : el.value;
+        if(f === "Next Follow-up") patch.snoozedUntil = "";
+        setC(id, patch, f + " updated");
+      };
+    } else {
+      el.oninput = () => {
+        clearTimeout(deb);
+        const v = el.value;
+        deb = setTimeout(() => {
+          const patch = {}; patch[f] = v;
+          if(f === "Next Action") patch.nextActionDone = false;
+          setC(id, patch);
+        }, 550);
+      };
+      el.onblur = () => {
+        clearTimeout(deb);
+        const cur = getClient(id);
+        if(cur && (cur[f] || "") === el.value) return;
+        const patch = {}; patch[f] = el.value;
+        if(f === "Next Action") patch.nextActionDone = false;
+        setC(id, patch);
+      };
+    }
+  });
+
+  const fu = d => setC(id, {"Next Follow-up": d, snoozedUntil: ""}, "Follow-up set");
+  const sn = d => { const patch = {"Next Follow-up": d, snoozedUntil: d};
+    if(c.Status === "Needs Attention") patch.Status = "Follow-up Scheduled";
+    setC(id, patch, "Snoozed to " + fmt(d)); };
+
+  app.querySelectorAll(".quick [data-d]").forEach(b => b.onclick = () => fu(plusDays(+b.dataset.d)));
+  app.querySelectorAll(".quick [data-m]").forEach(b => b.onclick = () => fu(plusMonths(+b.dataset.m)));
+  app.querySelectorAll(".quick [data-s]").forEach(b => b.onclick = () => sn(plusDays(+b.dataset.s)));
+  app.querySelectorAll(".quick [data-sm]").forEach(b => b.onclick = () => sn(plusMonths(+b.dataset.sm)));
+
+  document.getElementById("nad").onclick = () => {
+    setC(id, {nextActionDone: !c.nextActionDone},
+      c.nextActionDone ? "Reopened" : "Next action done");
+  };
+}
+
+/* ---------- tabs ---------- */
+function renderTab(c, d){
+  const b = document.getElementById("body");
+  const list = (arr, cls) => arr.length
+    ? `<ul class="b ${cls||""}">${arr.map(x =>
+        `<li>${esc(x.t)}<span class="src">${fmt(x.d)}</span></li>`).join("")}</ul>`
+    : `<p class="empty">Nothing recorded.</p>`;
+
+  if(view.tab === "overview"){
+    const last = d.ms[0];
+    b.innerHTML = `
+      <div class="panel"><h3>Where things stand <span class="ro-note">from the last meeting</span></h3>
+        ${last ? `${last.summary.length
+            ? `<ul class="b">${last.summary.map(s => `<li>${esc(s)}</li>`).join("")}</ul>`
+            : `<p class="empty">That meeting has no summary yet.</p>`}
+          <p class="src" style="margin-top:9px">${esc(last.name)} · ${fmt(last.date)}</p>`
+        : `<p class="empty">No meetings logged yet.</p>`}</div>
+      <div class="panel"><h3>Outstanding actions (${d.oActs.length})</h3>
+        ${actionTable(d.oActs)}
+        <div class="mt-tools" style="margin-top:11px">
+          <button class="btn" data-newact="1">+ Add action</button></div></div>
+      <div class="panel"><h3>Live risks (${d.risks.length})</h3>${list(d.risks,"risk")}</div>
+      <div class="panel"><h3>Open questions (${d.qs.length})</h3>${list(d.qs)}</div>
+      ${clientGlassesPanel(d.gst)}`;
+  }
+  else if(view.tab === "timeline"){
+    b.innerHTML = `<div class="panel"><div class="tl">${d.ms.map(m => `
+      <div class="tl-i"><div class="tl-d">${fmt(m.date)} · ${esc(m.type)}</div>
+        <div class="tl-t">${esc(m.name)}</div>
+        <div class="tl-s">${esc(m.summary[0] || "")}</div></div>`).join("")
+      || `<p class="empty">No meetings yet.</p>`}</div></div>`;
+  }
+  else if(view.tab === "meetings"){
+    b.innerHTML = `<div class="bar"><button class="btn add" data-newmtg="1">+ Log a meeting</button></div>`
+      + (d.ms.map(meetingBlock).join("") || `<p class="empty">No meetings yet.</p>`);
+    b.querySelectorAll(".mt-h").forEach(h => h.onclick = () => {
+      const p = h.parentElement;
+      p.classList.toggle("open");
+      p.querySelector(".mt-b").classList.toggle("hide");
+      view.openMeetings[p.dataset.m] = p.classList.contains("open");
+    });
+    b.querySelectorAll("[data-medit]").forEach(x => x.onclick = () =>
+      meetingForm(getMeeting(x.dataset.medit), c._id));
+    b.querySelectorAll("[data-mdel]").forEach(x => x.onclick = () =>
+      meetingDeleteConfirm(getMeeting(x.dataset.mdel)));
+    b.querySelectorAll("[data-mact]").forEach(x => x.onclick = () =>
+      actionForm(null, {clientId:c._id, meetingId:x.dataset.mact}));
+  }
+  else if(view.tab === "actions"){
+    b.innerHTML = `<div class="panel"><h3>Outstanding actions (${d.oActs.length})</h3>
+      ${actionTable(d.oActs, true)}
+      <div class="mt-tools" style="margin-top:11px">
+        <button class="btn" data-newact="1">+ Add action</button></div></div>`;
+  }
+  else if(view.tab === "completed"){
+    b.innerHTML = `<div class="panel">
+      <h3>Completed &amp; cancelled (${d.dActs.length})</h3>
+      <p class="src" style="margin:-6px 0 11px 0;display:block">Untick to reopen.</p>
+      ${actionTable(d.dActs, true)}</div>`;
+  }
+  else if(view.tab === "risks"){
+    b.innerHTML = `<div class="panel"><h3>Risks &amp; blockers
+      <span class="ro-note">edit inside each meeting</span></h3>${list(d.risks,"risk")}</div>`;
+  }
+  else if(view.tab === "decisions"){
+    b.innerHTML = `<div class="panel"><h3>Confirmed decisions
+      <span class="ro-note">edit inside each meeting</span></h3>${list(d.decs,"dec")}</div>`;
+  }
+  else if(view.tab === "glasses"){
+    b.innerHTML = clientGlassesTab(c, d.gst);
+    wireClientGlasses();
+  }
+  else {
+    b.innerHTML = d.trs.length ? d.trs.map(m => `<div class="panel">
+      <h3>${fmt(m.date)} · ${esc(m.name)}</h3>
+      <p class="empty" style="padding:0">Stored at <code>${esc(m.transcript)}</code></p>
+      </div>`).join("") : `<p class="empty">No transcripts archived.</p>`;
+  }
+
+  b.querySelectorAll("[data-newact]").forEach(x => x.onclick = () =>
+    actionForm(null, {clientId:c._id, meetingId:""}));
+  const nm = b.querySelector("[data-newmtg]");
+  if(nm) nm.onclick = () => meetingForm(null, c._id);
+  wireActions();
+}
+
+/* ---------- editable action table ---------- */
+function actionTable(acts, showSource){
+  if(!acts.length) return `<p class="empty">Nothing here.</p>`;
+  return `<table class="at"><thead><tr>
+      <th class="cbx"></th><th>Action</th><th>Owner</th><th>Due</th><th>Status</th>
+      ${showSource ? "<th>From</th>" : ""}<th class="dl"></th></tr></thead><tbody>
+    ${acts.map(a => {
+      const done = !isOpenA(a);
+      const src = a.meetingId ? getMeeting(a.meetingId) : null;
+      return `<tr class="${done ? "isdone" : ""}" data-a="${esc(a._id)}">
+        <td class="cbx"><input type="checkbox" data-f="done"${a.status === "Done" ? " checked" : ""}
+          title="Mark done"></td>
+        <td class="act-c"><input class="ed sm" data-f="action" value="${esc(a.action)}"></td>
+        <td><input class="ed sm" data-f="owner" value="${esc(a.owner)}" size="12"></td>
+        <td><input type="date" class="ed sm" data-f="due" value="${esc(dstr(a.due))}"></td>
+        <td><select class="ed sm" data-f="status">${opt(ASTATUS, a.status)}</select></td>
+        ${showSource ? `<td class="ow">${src ? fmt(src.date) : "Client"}</td>` : ""}
+        <td class="dl"><button class="del" data-f="del" title="Delete action">&#215;</button></td>
+      </tr>`;
+    }).join("")}</tbody></table>`;
+}
+
+function wireActions(){
+  app.querySelectorAll("tr[data-a]").forEach(tr => {
+    const id = tr.dataset.a;
+    tr.querySelectorAll("[data-f]").forEach(el => {
+      const f = el.dataset.f;
+      if(f === "done"){
+        el.onchange = () => {
+          setA(id, {status: el.checked ? "Done" : "Open"},
+            el.checked ? "Marked done" : "Reopened");
+          render();
+        };
+      } else if(f === "del"){
+        el.onclick = async () => {
+          const a = crmActions.find(x => x._id === id);
+          if(!a) return;
+          if(!confirm("Delete this action?\n\n" + (a.action || a._id))) return;
+          const ok = await actionRemove(a);
+          if(ok) render();
+        };
+      } else if(f === "status"){
+        el.onchange = () => { setA(id, {status: el.value}, "Status updated"); render(); };
+      } else if(f === "due"){
+        el.onchange = () => setA(id, {due: dstr(el.value)}, "Due date updated");
+      } else {
+        let t;
+        el.oninput = () => { clearTimeout(t); const v = el.value;
+          t = setTimeout(() => { const p = {}; p[f] = v; setA(id, p); }, 550); };
+        el.onblur = () => {
+          clearTimeout(t);
+          const a = crmActions.find(x => x._id === id);
+          if(a && (a[f] || "") === el.value) return;
+          const p = {}; p[f] = el.value; setA(id, p);
+        };
+      }
+    });
+  });
+}
+
+/* ---------- meeting block ---------- */
+function meetingBlock(m){
+  const sec = (t, arr, cls) => arr && arr.length
+    ? `<div><h4>${t}</h4><ul class="b ${cls||""}">${arr.map(x =>
+        `<li>${esc(x)}</li>`).join("")}</ul></div>` : "";
+  const isOpen = !!view.openMeetings[m._id];
+  const acts = actsOfMeeting(m._id);
+  return `<div class="mt ${isOpen ? "open" : ""}" data-m="${esc(m._id)}"><button class="mt-h">
+      <span class="caret">&#9654;</span>
+      <span class="mt-dt">${fmt(m.date)}</span>
+      <span class="mt-nm">${esc(m.name)}</span>
+      <span class="pill p-gry">${esc(m.type)}</span></button>
+    <div class="mt-b ${isOpen ? "" : "hide"}">
+      <div class="mt-tools">
+        <button class="iconbtn" data-medit="${esc(m._id)}">Edit meeting</button>
+        <button class="iconbtn" data-mact="${esc(m._id)}">+ Action</button>
+        <button class="iconbtn dg" data-mdel="${esc(m._id)}">Delete</button>
+      </div>
+      ${sec("Executive summary", m.summary)}
+      ${m.participants.length ? `<div><h4>Participants</h4><ul class="b">${
+        m.participants.map(p => `<li>${esc(p)}</li>`).join("")}</ul></div>` : ""}
+      ${sec("Key topics", m.topics)}
+      ${sec("Confirmed decisions", m.decisions, "dec")}
+      <div><h4>Action items <span class="ro-note">editable</span></h4>
+        ${actionTable(acts)}</div>
+      ${sec("Risks &amp; blockers", m.risks, "risk")}
+      ${sec("Open questions", m.questions)}
+      ${sec("Notes", m.notes)}
+      ${m.transcript ? `<div><h4>Transcript</h4>
+        <p class="empty" style="padding:0"><code>${esc(m.transcript)}</code></p></div>` : ""}
+    </div></div>`;
+}
+
+/* ============================================================
+   FORMS - client, meeting, action
+   ============================================================ */
+function lockModal(o, saveBtn, label){
+  o.querySelectorAll("button").forEach(b => b.setAttribute("disabled",""));
+  if(saveBtn) saveBtn.textContent = label || "Saving…";
+}
+function unlockModal(o, saveBtn, label){
+  o.querySelectorAll("button").forEach(b => b.removeAttribute("disabled"));
+  if(saveBtn && label) saveBtn.textContent = label;
+}
+
+function clientForm(rec){
+  const c = rec || {_id:"", Client:"", Stage:"Discovery", "Last Meeting":"",
+    "Next Follow-up":"", "Next Action":"", "Action Owner":"", Status:"Waiting on Us",
+    Summary:"", Notes:"", Meetings:"0", nextActionDone:false, snoozedUntil:"", Updated:""};
+  modal(`<h3>${rec ? "Edit client" : "New client"}</h3>
+    <div class="scroll">
+    <div class="fld"><label>Client name</label>
+      <input id="f-name" value="${esc(c.Client)}" placeholder="Company or contact"></div>
+    <div class="fld2">
+      <div class="fld"><label>Stage</label><select id="f-stage">${opt(STAGES, c.Stage)}</select></div>
+      <div class="fld"><label>Status</label><select id="f-status">${opt(STATUSES, c.Status)}</select></div>
+    </div>
+    <div class="fld2">
+      <div class="fld"><label>Last meeting</label>
+        <input type="date" id="f-last" value="${esc(dstr(c["Last Meeting"]))}"></div>
+      <div class="fld"><label>Next follow-up</label>
+        <input type="date" id="f-fu" value="${esc(dstr(c["Next Follow-up"]))}"></div>
+    </div>
+    <div class="fld"><label>Next action</label>
+      <input id="f-na" value="${esc(c["Next Action"])}" placeholder="One imperative action"></div>
+    <div class="fld"><label>Action owner</label>
+      <input id="f-owner" value="${esc(c["Action Owner"])}" placeholder="Us / Client / Both"></div>
+    <div class="fld"><label>Summary</label>
+      <textarea class="t2" id="f-summary">${esc(c.Summary)}</textarea></div>
+    <div class="fld"><label>Notes <span class="opt">optional</span></label>
+      <textarea class="t2" id="f-notes">${esc(c.Notes)}</textarea></div>
+    ${rec ? `<div class="fld"><label>Client ID <span class="opt">read-only</span></label>
+      <input value="${esc(c._id)}" readonly></div>` : ""}
+    </div>
+    <div class="btns"><button class="btn" id="cx">Cancel</button>
+      <button class="btn pri" id="sv">${rec ? "Save changes" : "Create client"}</button></div>`, o => {
+    const sv = o.querySelector("#sv");
+    let sending = false;
+    o.querySelector("#f-name").focus();
+    o.querySelector("#cx").onclick = () => { if(!sending) closeModal(); };
+    sv.onclick = async () => {
+      if(sending) return;
+      const name = o.querySelector("#f-name").value.trim();
+      if(!name) return toast("Give the client a name");
+      const rec2 = Object.assign({}, c, {
+        Client: name,
+        Stage: o.querySelector("#f-stage").value,
+        Status: o.querySelector("#f-status").value,
+        "Last Meeting": dstr(o.querySelector("#f-last").value),
+        "Next Follow-up": dstr(o.querySelector("#f-fu").value),
+        "Next Action": o.querySelector("#f-na").value.trim(),
+        "Action Owner": o.querySelector("#f-owner").value.trim(),
+        Summary: o.querySelector("#f-summary").value.trim(),
+        Notes: o.querySelector("#f-notes").value,
+        Updated: nowIso()
+      });
+      if(!rec2._id) rec2._id = newClientId(name);
+      sending = true; lockModal(o, sv);
+      const ok = rec ? await clientSave(rec2, "Client updated")
+                     : await clientCreate(rec2, "Client created");
+      if(ok){
+        const i = crmClients.findIndex(x => x._id === rec2._id);
+        if(i < 0) crmClients.push(rec2); else crmClients[i] = rec2;
+        closeModal();
+        view.page = "client"; view.client = rec2._id;
+        render();
+      }else{
+        sending = false;
+        unlockModal(o, sv, rec ? "Save changes" : "Create client");
+      }
+    };
+  });
+}
+
+function meetingForm(rec, presetClientId){
+  const m = rec || {_id:"", clientId:presetClientId || "", date: iso(TODAY), name:"",
+    participants:[], summary:[], notes:[], topics:[], decisions:[], risks:[],
+    questions:[], type:"Meeting", transcript:"", createdAt:"", updatedAt:""};
+  const clients = clientsAll().sort((a,b) => (a.Client||"").localeCompare(b.Client||""));
+  const cOpts = clients.map(c =>
+    `<option value="${esc(c._id)}"${c._id === m.clientId ? " selected" : ""}>${esc(c.Client)}</option>`).join("");
+
+  modal(`<h3>${rec ? "Edit meeting" : "Log a meeting"}</h3>
+    <div class="scroll">
+    <div class="fld"><label>Client</label>
+      <select id="f-client"><option value="">Pick a client…</option>${cOpts}</select></div>
+    <div class="fld2">
+      <div class="fld"><label>Date</label>
+        <input type="date" id="f-date" value="${esc(dstr(m.date) || iso(TODAY))}"></div>
+      <div class="fld"><label>Type <span class="opt">optional</span></label>
+        <input id="f-type" value="${esc(m.type || "Meeting")}" placeholder="Sales / Discovery"></div>
+    </div>
+    <div class="fld"><label>Title</label>
+      <input id="f-title" value="${esc(m.name)}" placeholder="What this meeting was"></div>
+    <div class="fld"><label>Participants <span class="opt">one per line</span></label>
+      <textarea class="t2" id="f-participants">${esc(joinLines(m.participants))}</textarea></div>
+    <div class="fld"><label>Summary <span class="opt">one bullet per line</span></label>
+      <textarea class="t3" id="f-summary">${esc(joinLines(m.summary))}</textarea></div>
+    <div class="fld"><label>Notes <span class="opt">one per line</span></label>
+      <textarea class="t2" id="f-notes">${esc(joinLines(m.notes))}</textarea></div>
+    <h4>Optional sections</h4>
+    <div class="fld"><label>Key topics</label>
+      <textarea class="t2" id="f-topics">${esc(joinLines(m.topics))}</textarea></div>
+    <div class="fld"><label>Confirmed decisions</label>
+      <textarea class="t2" id="f-decisions">${esc(joinLines(m.decisions))}</textarea></div>
+    <div class="fld"><label>Risks &amp; blockers</label>
+      <textarea class="t2" id="f-risks">${esc(joinLines(m.risks))}</textarea></div>
+    <div class="fld"><label>Open questions</label>
+      <textarea class="t2" id="f-questions">${esc(joinLines(m.questions))}</textarea></div>
+    <div class="fld"><label>Transcript path</label>
+      <input id="f-transcript" value="${esc(m.transcript)}" placeholder="_system/transcripts/…"></div>
+    ${rec ? `<div class="fld"><label>Meeting ID <span class="opt">read-only</span></label>
+      <input value="${esc(m._id)}" readonly></div>` : ""}
+    </div>
+    <div class="btns"><button class="btn" id="cx">Cancel</button>
+      <button class="btn pri" id="sv">${rec ? "Save changes" : "Save meeting"}</button></div>`, o => {
+    const sv = o.querySelector("#sv");
+    const val = f => o.querySelector("#f-" + f).value;
+    let sending = false;
+    o.querySelector("#cx").onclick = () => { if(!sending) closeModal(); };
+    o.querySelector(m.clientId ? "#f-title" : "#f-client").focus();
+
+    sv.onclick = async () => {
+      if(sending) return;
+      const clientId = val("client");
+      if(!clientId) return toast("Pick a client first");
+      const title = val("title").trim();
+      if(!title) return toast("Give the meeting a title");
+
+      const rec2 = Object.assign({}, m, {
+        clientId: clientId,
+        date: dstr(val("date")) || iso(TODAY),
+        name: title,
+        type: val("type").trim() || "Meeting",
+        participants: toPeople(val("participants")),
+        summary: toLines(val("summary")),
+        notes: toLines(val("notes")),
+        topics: toLines(val("topics")),
+        decisions: toLines(val("decisions")),
+        risks: toLines(val("risks")),
+        questions: toLines(val("questions")),
+        transcript: val("transcript").trim()
+      });
+      if(!rec2._id) rec2._id = newMeetingId(clientId, rec2.date);
+
+      sending = true; lockModal(o, sv);
+      const ok = await meetingSave(rec2, rec ? "update" : "create",
+        rec ? "Meeting updated" : "Meeting created");
+      if(!ok){
+        sending = false;
+        unlockModal(o, sv, rec ? "Save changes" : "Save meeting");
+        return;
+      }
+      await syncClientMeetingStats(clientId);
+      closeModal();
+      view.page = "client"; view.client = clientId; view.tab = "meetings";
+      view.openMeetings[rec2._id] = true;
+      render();
+    };
+  });
+}
+
+function meetingDeleteConfirm(m){
+  if(!m) return;
+  const n = actsOfMeeting(m._id).length;
+  modal(`<h3>Delete this meeting?</h3>
+    <p><b>${esc(m.name)}</b> · ${fmt(m.date)}<br>
+      This removes the row from the Meetings sheet.
+      ${n ? `Its ${n} action${n===1?"":"s"} stay in the Actions sheet, attached to the client.`
+          : ""}</p>
+    <div class="btns"><button class="btn" id="cx">Cancel</button>
+      <button class="btn dg" id="go">Delete meeting</button></div>`, o => {
+    const go = o.querySelector("#go");
+    let sending = false;
+    o.querySelector("#cx").onclick = () => { if(!sending) closeModal(); };
+    go.onclick = async () => {
+      if(sending) return;
+      sending = true; lockModal(o, go, "Deleting…");
+      const ok = await meetingRemove(m);
+      if(!ok){ sending = false; unlockModal(o, go, "Delete meeting"); return; }
+      await syncClientMeetingStats(m.clientId);
+      closeModal();
+      render();
+    };
+  });
+}
+
+function actionForm(rec, ctx){
+  const c = ctx || {};
+  const a = rec || {_id:"", meetingId:c.meetingId || "", clientId:c.clientId || "",
+    action:"", owner:"", due:"", status:"Open", updatedAt:""};
+  const ms = meetingsOf(a.clientId);
+  const mOpts = `<option value="">No meeting (client-level)</option>` + ms.map(m =>
+    `<option value="${esc(m._id)}"${m._id === a.meetingId ? " selected" : ""}>${
+      fmt(m.date)} · ${esc(m.name)}</option>`).join("");
+
+  modal(`<h3>${rec ? "Edit action" : "New action"}</h3>
+    <div class="fld"><label>Action item</label>
+      <input id="f-action" value="${esc(a.action)}" placeholder="One imperative action"></div>
+    <div class="fld2">
+      <div class="fld"><label>Owner</label>
+        <input id="f-owner" value="${esc(a.owner)}" placeholder="Who owns it"></div>
+      <div class="fld"><label>Due date</label>
+        <input type="date" id="f-due" value="${esc(dstr(a.due))}"></div>
+    </div>
+    <div class="fld"><label>Status</label>
+      <select id="f-status">${opt(ASTATUS, a.status)}</select></div>
+    <div class="fld"><label>From meeting</label>
+      <select id="f-meeting">${mOpts}</select></div>
+    <div class="btns"><button class="btn" id="cx">Cancel</button>
+      <button class="btn pri" id="sv">${rec ? "Save changes" : "Add action"}</button></div>`, o => {
+    const sv = o.querySelector("#sv");
+    let sending = false;
+    o.querySelector("#f-action").focus();
+    o.querySelector("#cx").onclick = () => { if(!sending) closeModal(); };
+    sv.onclick = async () => {
+      if(sending) return;
+      const text = o.querySelector("#f-action").value.trim();
+      if(!text) return toast("Describe the action first");
+      const rec2 = Object.assign({}, a, {
+        action: text,
+        owner: o.querySelector("#f-owner").value.trim() || "Unassigned",
+        due: dstr(o.querySelector("#f-due").value),
+        status: o.querySelector("#f-status").value,
+        meetingId: o.querySelector("#f-meeting").value
+      });
+      sending = true; lockModal(o, sv);
+      const ok = await actionSave(rec2, rec ? "update" : "create",
+        rec ? "Action updated" : "Action added");
+      if(ok){ closeModal(); render(); }
+      else{ sending = false; unlockModal(o, sv, rec ? "Save changes" : "Add action"); }
+    };
+  });
+}
+
+
+/* ============================================================
+   GLASSES TRACKER VIEW
+   ============================================================ */
+function glassesView(){
+  const total = glasses.length;
+  const del = glasses.filter(g => g.delivered === "Yes").length;
+  const bk  = glasses.filter(g => g.booked === "Yes").length;
+
+  const GF = {
+    all:      () => true,
+    tosend:   g => g.delivered !== "Yes",
+    delivered:g => g.delivered === "Yes",
+    followup: g => g.delivered === "Yes" && g.booked !== "Yes",
+    booked:   g => g.booked === "Yes",
+    notes:    g => !!(g.notes || "").trim()
+  };
+  if(!GF[view.gf]) view.gf = "all";
+
+  let list = glasses.filter(GF[view.gf]);
+  if(view.gq){
+    const q = view.gq.toLowerCase();
+    list = list.filter(g =>
+      (g.name + " " + g.company + " " + (g.notes || "")).toLowerCase().includes(q));
+  }
+  list.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+
+  const n = f => glasses.filter(GF[f]).length;
+  const chip = (k, l) =>
+    `<button class="chip ${view.gf === k ? "on" : ""}" data-gf="${k}">${l} ${n(k)}</button>`;
+  const off = (gState.loading || gState.busy) ? " disabled" : "";
+
+  app.innerHTML = `
+  ${chrome()}
+  <p class="sub">Who has their glasses, and who turned into a meeting.
+    <span class="gsync">${gState.loading ? "· syncing with Google Sheets…"
+      : gState.error ? "· not synced" : gState.loaded ? "· synced with Google Sheets" : ""}</span></p>
+  <div class="strip">
+    <div class="stat"><b>${total}</b><span>Total recipients</span></div>
+    <div class="stat ${del ? "good" : ""}"><b>${del}</b><span>Delivered</span></div>
+    <div class="stat ${bk ? "good" : ""}"><b>${bk}</b><span>Meetings booked</span></div>
+  </div>
+  <div class="bar">
+    ${chip("all","All")}${chip("tosend","To send")}${chip("delivered","Delivered")}
+    ${chip("followup","Follow up")}${chip("booked","Booked")}${chip("notes","With notes")}
+  </div>
+  <div class="bar">
+    <button class="btn add" id="addr"${off}>+ Add Recipient</button>
+    <button class="btn" id="grefresh"${off}>${gState.loading ? "Refreshing…" : "Refresh"}</button>
+    <input class="search" id="gq" placeholder="Search by name, company or notes…" value="${esc(view.gq)}">
+  </div>
+  <div class="panel">
+    ${gState.error ? `<div class="gerr">
+        <strong>Could not sync with the Google Sheet</strong>
+        <p>${esc(gState.error)}</p>
+        <button class="btn" id="gretry">Retry</button></div>`
+     : gState.loading && !gState.loaded
+     ? `<div class="gload"><span class="spin"></span>Loading recipients from Google Sheets…</div>`
+     : list.length ? `<table class="gt${gState.busy ? " busy" : ""}"><thead><tr>
+        <th>Name</th><th>Company</th><th>Address</th><th>Phone</th>
+        <th>Delivered</th><th>Meeting booked</th><th></th></tr></thead><tbody>
+      ${list.map(g => `<tr data-g="${esc(g.id)}">
+        <td class="gt-name" data-l="Name">${esc(g.name) || "<span class='gt-mut'>Unnamed</span>"}
+          ${(g.notes || "").trim() ? `<div class="gt-note">${esc(g.notes)}</div>` : ""}</td>
+        <td data-l="Company">${esc(g.company) || "<span class='gt-mut'>—</span>"}</td>
+        <td class="gt-mut" data-l="Address">${esc(g.address) || "—"}</td>
+        <td class="gt-mut" data-l="Phone">${esc(g.phone) || "—"}</td>
+        <td data-l="Delivered"><select class="yn" data-f="delivered" data-v="${esc(g.delivered)}">
+          <option value="No"${g.delivered==="No"?" selected":""}>No</option>
+          <option value="Yes"${g.delivered==="Yes"?" selected":""}>Yes</option></select></td>
+        <td data-l="Meeting booked"><select class="yn" data-f="booked" data-v="${esc(g.booked)}">
+          <option value="No"${g.booked==="No"?" selected":""}>No</option>
+          <option value="Yes"${g.booked==="Yes"?" selected":""}>Yes</option></select></td>
+        <td class="gt-act" data-l="">
+          <button class="iconbtn" data-a="edit"${off}>Edit</button>
+          <button class="iconbtn dg" data-a="del"${off}>Delete</button></td>
+      </tr>`).join("")}</tbody></table>`
+    : `<p class="empty">${total ? "No recipients match this filter or search."
+        : "No recipients yet. Use Add Recipient to create the first one."}</p>`}
+  </div>
+  <p class="foot">Shared Google Sheet. Every change is written straight to it.
+    Data &rarr; Export Backup saves a read-only snapshot.</p>`;
+
+  wireChrome();
+  document.getElementById("addr").onclick = () => glassesForm(null);
+  document.getElementById("grefresh").onclick = () => glassesLoad();
+  const rt = document.getElementById("gretry");
+  if(rt) rt.onclick = () => { gState.error = null; glassesLoad(); };
+  app.querySelectorAll("[data-gf]").forEach(b =>
+    b.onclick = () => { view.gf = b.dataset.gf; glassesView(); });
+
+  const gq = document.getElementById("gq");
+  gq.oninput = e => {
+    view.gq = e.target.value;
+    const p = e.target.selectionStart;
+    glassesView();
+    const n = document.getElementById("gq");
+    n.focus(); n.setSelectionRange(p, p);
+  };
+
+  app.querySelectorAll("tr[data-g]").forEach(tr => {
+    const id = tr.dataset.g;
+    tr.querySelectorAll("select[data-f]").forEach(sel => sel.onchange = () => {
+      const g = glasses.find(x => x.id === id);
+      if(!g || gState.busy) return;
+      const patch = Object.assign({}, g);
+      patch[sel.dataset.f] = sel.value;
+      glassesSave("update", gToSheet(patch),
+        sel.value === "Yes" ? "Marked Yes" : "Marked No");
+    });
+    tr.querySelector('[data-a="edit"]').onclick = () =>
+      glassesForm(glasses.find(x => x.id === id));
+    tr.querySelector('[data-a="del"]').onclick = () =>
+      glassesDelete(glasses.find(x => x.id === id));
+  });
+
+  /* first visit to the tab pulls the sheet */
+  if(!gState.loaded && !gState.loading && !gState.error) glassesLoad();
+}
+
+function glassesForm(rec){
+  const g = rec || {id:"", name:"", company:"", address:"", phone:"", notes:"",
+                    delivered:"No", booked:"No"};
+  const yn = (f) => `<select id="f-${f}">
+      <option value="No"${g[f]==="No"?" selected":""}>No</option>
+      <option value="Yes"${g[f]==="Yes"?" selected":""}>Yes</option></select>`;
+
+  modal(`<h3>${rec ? "Edit recipient" : "Add recipient"}</h3>
+    <div class="fld"><label>Name</label>
+      <input id="f-name" value="${esc(g.name)}" placeholder="Full name"></div>
+    <div class="fld"><label>Company</label>
+      <input id="f-company" value="${esc(g.company)}" placeholder="Company"></div>
+    <div class="fld"><label>Address</label>
+      <input id="f-address" value="${esc(g.address)}" placeholder="Shipping address"></div>
+    <div class="fld"><label>Phone</label>
+      <input id="f-phone" value="${esc(g.phone)}" placeholder="Phone"></div>
+    <div class="fld2">
+      <div class="fld"><label>Delivered</label>${yn("delivered")}</div>
+      <div class="fld"><label>Meeting booked</label>${yn("booked")}</div>
+    </div>
+    <div class="fld"><label>Notes <span class="opt">optional</span></label>
+      <textarea id="f-notes" placeholder="Anything worth remembering">${esc(g.notes)}</textarea></div>
+    <div class="btns"><button class="btn" id="cx">Cancel</button>
+      <button class="btn pri" id="sv">${rec ? "Save changes" : "Add recipient"}</button></div>`,
+  o => {
+    const nameEl = o.querySelector("#f-name");
+    const svBtn = o.querySelector("#sv");
+    const cxBtn = o.querySelector("#cx");
+    nameEl.focus();
+    let sending = false;
+
+    const save = async () => {
+      if(sending || gState.busy) return;            // blocks duplicate clicks
+      const v = f => o.querySelector("#f-" + f).value.trim();
+      if(!v("name") && !v("company")) return toast("Add a name or a company first");
+
+      const data = {id: rec ? rec.id : "",
+                    name:v("name"), company:v("company"), address:v("address"),
+                    phone:v("phone"), notes:v("notes"),
+                    delivered:o.querySelector("#f-delivered").value,
+                    booked:o.querySelector("#f-booked").value};
+
+      sending = true;
+      svBtn.textContent = "Saving…";
+      svBtn.setAttribute("disabled", "");
+      cxBtn.setAttribute("disabled", "");
+
+      const ok = await glassesSave(rec ? "update" : "create", gToSheet(data),
+                                   rec ? "Recipient updated" : "Recipient added");
+      sending = false;
+      if(ok){ closeModal(); }
+      else if(o.isConnected !== false){
+        svBtn.textContent = rec ? "Save changes" : "Add recipient";
+        svBtn.removeAttribute("disabled");
+        cxBtn.removeAttribute("disabled");
+      }
+    };
+    svBtn.onclick = save;
+    cxBtn.onclick = () => { if(!sending) closeModal(); };
+    o.querySelectorAll("input").forEach(i => i.onkeydown = e => {
+      if(e.key === "Enter"){ e.preventDefault(); save(); }
+    });
+  });
+}
+
+function glassesDelete(rec){
+  if(!rec) return;
+  const who = rec.name || rec.company || "this recipient";
+  modal(`<h3>Delete ${esc(who)}?</h3>
+    <p>This removes the row from the shared Google Sheet for everyone. It cannot be
+       undone. Your CRM data is not affected.</p>
+    <div class="btns"><button class="btn" id="cx">Cancel</button>
+      <button class="btn dg" id="go">Delete</button></div>`, o => {
+    const goBtn = o.querySelector("#go"), cxBtn = o.querySelector("#cx");
+    let sending = false;
+    cxBtn.onclick = () => { if(!sending) closeModal(); };
+    goBtn.onclick = async () => {
+      if(sending || gState.busy) return;             // blocks duplicate clicks
+      sending = true;
+      goBtn.textContent = "Deleting…";
+      goBtn.setAttribute("disabled", "");
+      cxBtn.setAttribute("disabled", "");
+      const ok = await glassesSave("delete", {ID: rec.id}, "Recipient deleted");
+      sending = false;
+      if(ok){ closeModal(); }
+      else{
+        goBtn.textContent = "Delete";
+        goBtn.removeAttribute("disabled");
+        cxBtn.removeAttribute("disabled");
+      }
+    };
+  });
+}
+
+/* ============================================================
+   THE "Data" MENU - import a meeting, refresh, export a snapshot
+   ============================================================ */
+function dataMenu(ev){
+  const r = ev.currentTarget.getBoundingClientRect();
+  openPop(r.right - 236, r.bottom + 6, `
+    <div class="ph">Google Sheets</div>
+    <button class="mi" data-a="imp">&#8679; Import meeting (JSON)</button>
+    <button class="mi" data-a="ref">&#8635; Refresh everything</button>
+    <hr>
+    <div class="ph">Backup</div>
+    <button class="mi" data-a="exp">&#8681; Export snapshot (JSON)</button>
+    <div class="ph" style="padding-top:6px;font-weight:500;text-transform:none;letter-spacing:0">
+      ${crm.syncedAt ? "Synced " + ago(crm.syncedAt) : "Not synced yet"}</div>`,
+  p => {
+    p.querySelector('[data-a="imp"]').onclick = () => { closePop(); importMeeting(); };
+    p.querySelector('[data-a="ref"]').onclick = () => { closePop(); refreshAll(); };
+    p.querySelector('[data-a="exp"]').onclick = () => { closePop(); exportBackup(); };
+  });
+}
+
+/* ---------- read-only snapshot of what is currently loaded ---------- */
+function backupBlob(){
+  return JSON.stringify({
+    _format: "meeting-crm-snapshot",
+    _version: 3,
+    exported: nowIso(),
+    clients:  crmClients.map(cToSheet),
+    meetings: crmMeetings.map(mToSheet),
+    actions:  crmActions.map(aToSheet),
+    glasses:  glasses
+  }, null, 2);
+}
+
+function exportBackup(){
+  const json = backupBlob();
+  const fname = "meeting-crm-snapshot-" + iso(TODAY) + ".json";
+  let downloaded = false;
+  try{
+    const url = URL.createObjectURL(new Blob([json], {type:"application/json"}));
+    const a = document.createElement("a");
+    a.href = url; a.download = fname;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    downloaded = true;
+  }catch(e){ downloaded = false; }
+
+  modal(`<h3>Snapshot</h3>
+    <p>${downloaded ? "Downloaded as <code>" + esc(fname) + "</code>. " : ""}A read-only copy of
+      every row currently loaded from Google Sheets, plus the Glasses Tracker rows.
+      The Sheet itself stays the source of truth.</p>
+    <textarea id="bk" readonly>${esc(json)}</textarea>
+    <div class="btns"><button class="btn" id="cp">Copy</button>
+      <button class="btn pri" id="cl">Done</button></div>`, o => {
+    o.querySelector("#cp").onclick = () => {
+      const ta = o.querySelector("#bk");
+      ta.select(); ta.setSelectionRange(0, ta.value.length);
+      try{ document.execCommand("copy"); toast("Copied"); }catch(e){ toast("Select and copy manually"); }
+    };
+    o.querySelector("#cl").onclick = closeModal;
+  });
+}
+
+/* ============================================================
+   IMPORT MEETING - paste the JSON produced for a meeting
+   ============================================================ */
+function normalizeImport(d){
+  if(!d || typeof d !== "object" || Array.isArray(d))
+    throw new Error("The JSON must be an object with client / meeting / actions.");
+  const client  = d.client  || d.Client  || {};
+  const meeting = d.meeting || d.Meeting || {};
+  let actions   = d.actions || d.Actions || [];
+  if(!Array.isArray(actions)) throw new Error('"actions" must be an array.');
+  actions = actions.filter(a => a && typeof a === "object" &&
+    String(a.actionItem || a.action || "").trim());
+  if(typeof client !== "object" || Array.isArray(client))
+    throw new Error('"client" must be an object.');
+  if(!String(client.clientId || "").trim() && !String(client.clientName || "").trim())
+    throw new Error('"client" needs a clientId or a clientName.');
+  return {client, meeting, actions};
+}
+
+function importPreview(p){
+  const id = String(p.client.clientId || "").trim();
+  let target = id ? getClient(id) : null;
+  if(!target && p.client.clientName) target = clientByName(p.client.clientName);
+  const hasMeeting = !!(p.meeting && (p.meeting.title || p.meeting.date ||
+    p.meeting.summary || p.meeting.notes || p.meeting.meetingId));
+  return {
+    target: target,
+    mode: target ? "update" : "create",
+    name: (p.client.clientName || (target && target.Client) || id || "Unnamed client"),
+    hasMeeting: hasMeeting,
+    nActions: p.actions.length
+  };
+}
+
+function importMeeting(preset){
+  const seed = preset ? JSON.stringify({
+    client: {clientId: preset._id, clientName: preset.Client},
+    meeting: {date: iso(TODAY), title: "", participants: "", summary: "", notes: ""},
+    actions: []
+  }, null, 2) : "";
+
+  modal(`<h3>Import meeting</h3>
+    <p>Paste the JSON for this meeting. The client is matched on <b>Client ID</b> first,
+      then on client name. <code>topics</code>, <code>decisions</code>, <code>risks</code>,
+      <code>questions</code>, <code>type</code> and <code>transcript</code> are optional extras.</p>
+    <textarea id="ta" placeholder='{ "client": { … }, "meeting": { … }, "actions": [ … ] }'>${esc(seed)}</textarea>
+    <div id="pv"></div>
+    <div class="btns"><button class="btn" id="cx">Cancel</button>
+      <button class="btn pri" id="go">Preview</button></div>`, o => {
+    const ta  = o.querySelector("#ta");
+    const pv  = o.querySelector("#pv");
+    const go  = o.querySelector("#go");
+    const cx  = o.querySelector("#cx");
+    let parsed = null, stage = "parse", sending = false;
+
+    cx.onclick = () => { if(!sending) closeModal(); };
+    ta.oninput = () => { if(stage === "confirm"){ stage = "parse"; go.textContent = "Preview";
+      pv.innerHTML = ""; } };
+
+    const log = steps => {
+      pv.innerHTML = `<ul class="imp-log">${steps.map(s =>
+        `<li><span class="${s.ok === true ? "ok" : s.ok === false ? "no" : "wa"}">${
+          s.ok === true ? "&#10003;" : s.ok === false ? "&#10007;" : "…"}</span>
+          <span>${esc(s.t)}${s.det ? `<small>${esc(s.det)}</small>` : ""}</span></li>`).join("")}</ul>`;
+    };
+
+    go.onclick = async () => {
+      if(sending) return;
+
+      if(stage === "parse"){
+        let d;
+        try{ d = JSON.parse(ta.value); }
+        catch(err){ pv.innerHTML = `<div class="pv" style="color:var(--red)">That is not valid JSON: ${
+          esc(err.message)}</div>`; return; }
+        try{ parsed = normalizeImport(d); }
+        catch(err){ pv.innerHTML = `<div class="pv" style="color:var(--red)">${esc(err.message)}</div>`; return; }
+
+        const s = importPreview(parsed);
+        pv.innerHTML = `<div class="pv">
+          <b>Client:</b> ${esc(s.name)} — will be <b>${s.mode === "create" ? "created" : "updated"}</b><br>
+          <b>${s.hasMeeting ? 1 : 0} Meeting</b>${s.hasMeeting ? "" : " (nothing to create)"}<br>
+          <b>${s.nActions} Action${s.nActions === 1 ? "" : "s"}</b><br><br>
+          Continue?</div>`;
+        stage = "confirm";
+        go.textContent = "Continue";
+        return;
+      }
+
+      /* stage === "confirm" - actually write to the sheet */
+      sending = true;
+      go.textContent = "Saving…";
+      go.setAttribute("disabled",""); cx.setAttribute("disabled","");
+      const res = await runImport(parsed, log);
+      sending = false;
+      cx.removeAttribute("disabled");
+      go.removeAttribute("disabled");
+
+      if(res.failed === 0){
+        go.textContent = "Done";
+        go.onclick = () => { closeModal(); render(); };
+        cx.textContent = "Close";
+        if(res.clientId){ view.page = "client"; view.client = res.clientId; view.tab = "meetings"; }
+        render();
+      }else{
+        go.textContent = "Retry failed steps";
+        stage = "confirm";
+        toast(res.failed + " step" + (res.failed === 1 ? "" : "s") + " failed");
+      }
+    };
+  });
+}
+
+/* Writes in order: 1 Client, 2 Meeting, 3 Actions.
+   Every step is reported. Nothing fails silently. */
+async function runImport(p, log){
+  const steps = [];
+  const push = (t, ok, det) => { steps.push({t, ok, det}); log(steps); };
+  let failed = 0;
+
+  /* ---- 1. client ---- */
+  const givenId = String(p.client.clientId || "").trim();
+  let target = givenId ? getClient(givenId) : null;
+  if(!target && p.client.clientName) target = clientByName(p.client.clientName);
+
+  const FIELDS = [["clientName","Client"],["stage","Stage"],["lastMeeting","Last Meeting"],
+    ["nextFollowUp","Next Follow-up"],["nextAction","Next Action"],
+    ["actionOwner","Action Owner"],["status","Status"],["summary","Summary"],
+    ["notes","Notes"]];
+
+  let clientRec, mode;
+  if(target){
+    mode = "update";
+    clientRec = Object.assign({}, target);
+    FIELDS.forEach(([src, dst]) => {
+      const v = p.client[src];
+      if(v !== undefined && v !== null && String(v).trim() !== "") clientRec[dst] = String(v).trim();
+    });
+  }else{
+    mode = "create";
+    clientRec = {_id: givenId || newClientId(p.client.clientName),
+      Client:"", Stage:"", "Last Meeting":"", "Next Follow-up":"", "Next Action":"",
+      "Action Owner":"", Status:"", Summary:"", Notes:"", Meetings:"0",
+      nextActionDone:false, snoozedUntil:"", Updated:""};
+    FIELDS.forEach(([src, dst]) => {
+      const v = p.client[src];
+      if(v !== undefined && v !== null) clientRec[dst] = String(v).trim();
+    });
+  }
+  clientRec["Last Meeting"]   = dstr(clientRec["Last Meeting"]);
+  clientRec["Next Follow-up"] = dstr(clientRec["Next Follow-up"]);
+  if(String(p.client.nextAction || "").trim()) clientRec.nextActionDone = false;
+  clientRec.Updated = nowIso();
+  const clientId = clientRec._id;
+
+  push("Client · " + (clientRec.Client || clientId), null, mode === "create" ? "creating…" : "updating…");
+  let ok = await gsSave("clients", mode, cToSheet(clientRec),
+    mode === "create" ? "Client created" : "Client updated");
+  steps.pop();
+  push("Client · " + (clientRec.Client || clientId), ok,
+    ok ? (mode === "create" ? "created" : "updated") : (crm.error || "write failed"));
+  if(!ok) return {failed: 1, clientId: null};
+  const ci = crmClients.findIndex(x => x._id === clientId);
+  if(ci < 0) crmClients.push(clientRec); else crmClients[ci] = clientRec;
+
+  /* ---- 2. meeting ---- */
+  const mm = p.meeting || {};
+  const wantMeeting = !!(mm.title || mm.date || mm.summary || mm.notes || mm.meetingId ||
+    mm.participants);
+  let meetingId = "";
+  if(wantMeeting){
+    const date = dstr(mm.date) || iso(TODAY);
+    const meetingRec = {
+      _id: String(mm.meetingId || "").trim(),
+      clientId: clientId,
+      date: date,
+      name: String(mm.title || "").trim() || ("Meeting " + fmt(date)),
+      participants: toPeople(mm.participants),
+      summary: toLines(mm.summary),
+      notes: toLines(mm.notes),
+      topics: toLines(mm.topics), decisions: toLines(mm.decisions),
+      risks: toLines(mm.risks), questions: toLines(mm.questions),
+      type: String(mm.type || "Meeting").trim() || "Meeting",
+      transcript: String(mm.transcript || "").trim(),
+      createdAt: nowIso(), updatedAt: nowIso()
+    };
+    if(!meetingRec._id) meetingRec._id = newMeetingId(clientId, date);
+    meetingId = meetingRec._id;
+    const existing = getMeeting(meetingId);
+    if(existing) meetingRec.createdAt = existing.createdAt || meetingRec.createdAt;
+
+    push("Meeting · " + meetingRec.name, null, "saving…");
+    ok = await meetingSave(meetingRec, existing ? "update" : "create", "Meeting saved");
+    steps.pop();
+    push("Meeting · " + meetingRec.name, ok,
+      ok ? (existing ? "updated" : "created") + " · " + meetingId
+         : (crm.error || "write failed"));
+    if(!ok) return {failed: 1, clientId: clientId};
+  }else{
+    push("Meeting", null, "nothing in the JSON to create");
+  }
+
+  /* ---- 3. actions ---- */
+  for(let i = 0; i < p.actions.length; i++){
+    const src = p.actions[i];
+    const rec = {
+      _id: String(src.actionId || "").trim(),
+      meetingId: meetingId,
+      clientId: clientId,
+      action: String(src.actionItem || src.action || "").trim(),
+      owner: String(src.owner || "").trim() || "Unassigned",
+      due: dstr(src.dueDate || src.due),
+      status: normAStatus(src.status),
+      updatedAt: nowIso()
+    };
+    if(!rec._id) rec._id = newActionId(meetingId || clientId);
+    const existed = crmActions.some(a => a._id === rec._id);
+    push("Action " + (i+1) + " · " + rec.action, null, "saving…");
+    const aok = await actionSave(rec, existed ? "update" : "create", "Action saved");
+    steps.pop();
+    push("Action " + (i+1) + " · " + rec.action, aok,
+      aok ? (existed ? "updated" : "created") : (crm.error || "write failed"));
+    if(!aok) failed++;
+  }
+
+  /* ---- 4. keep the client card in step ---- */
+  if(wantMeeting){
+    push("Client meeting count & last meeting", null, "updating…");
+    const sok = await syncClientMeetingStats(clientId, "Client updated");
+    steps.pop();
+    push("Client meeting count & last meeting", sok, sok ? "updated" : (crm.error || "write failed"));
+    if(!sok) failed++;
+  }
+
+  return {failed: failed, clientId: clientId};
+}
+
+/* ============================================================ */
+render();
+crmLoad();
+</script>
+</body>
+</html>
